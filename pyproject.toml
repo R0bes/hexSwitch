@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Hexagonal runtime switchboard for config-driven microservices"
 readme = "README.md"
 requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+]
 authors = [
     {name = "HexSwitch Contributors"}
 ]
