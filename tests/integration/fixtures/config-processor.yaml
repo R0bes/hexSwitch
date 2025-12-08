@@ -1,0 +1,25 @@
+service:
+  name: processor-service
+  runtime: python
+
+inbound:
+  http:
+    enabled: true
+    base_path: /api
+    port: 8081
+    routes:
+      - path: /process
+        method: POST
+        handler: mock-handlers.processor:handle_process
+      - path: /health
+        method: GET
+        handler: mock-handlers.processor:handle_health
+
+outbound:
+  http:
+    enabled: true
+    base_url: http://hexswitch-consumer:8082
+
+logging:
+  level: INFO
+

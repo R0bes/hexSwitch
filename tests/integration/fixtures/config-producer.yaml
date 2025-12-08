@@ -1,0 +1,25 @@
+service:
+  name: producer-service
+  runtime: python
+
+inbound:
+  http:
+    enabled: true
+    base_path: /api
+    port: 8080
+    routes:
+      - path: /produce
+        method: POST
+        handler: mock-handlers.producer:handle_produce
+      - path: /health
+        method: GET
+        handler: mock-handlers.producer:handle_health
+
+outbound:
+  http:
+    enabled: true
+    base_url: http://hexswitch-processor:8081
+
+logging:
+  level: INFO
+
