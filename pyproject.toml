@@ -37,6 +37,8 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -49,7 +51,7 @@ ignore = [
     "E501",  # line too long (handled by formatter)
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # unused imports in __init__.py are common
 
 [tool.pytest.ini_options]

@@ -1,7 +1,5 @@
 """Unit tests for version import."""
 
-import pytest
-
 from hexswitch import __version__
 
 
