@@ -72,6 +72,7 @@ addopts = [
 markers = [
     "unit: Unit tests",
     "integration: Integration tests",
+    "docker: Docker integration tests",
 ]
 
 [tool.coverage.run]

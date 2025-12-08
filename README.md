@@ -32,6 +32,34 @@ Run with coverage report:
 pytest --cov=src/hexswitch --cov-report=html
 ```
 
+Run only unit tests:
+
+```bash
+pytest tests/unit/
+```
+
+Run only integration tests:
+
+```bash
+pytest tests/integration/
+```
+
+Run Docker integration tests:
+
+```bash
+pytest tests/integration/test_docker.py -m docker
+```
+
+Or use the test scripts:
+
+```bash
+# Linux/Mac
+./scripts/test-docker.sh
+
+# Windows PowerShell
+.\scripts\test-docker.ps1
+```
+
 For detailed development instructions, see [Development Guide](docs/development_guide.md).
 
 ## Running the CLI
