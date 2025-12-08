@@ -1,0 +1,25 @@
+service:
+  name: consumer-service
+  runtime: python
+
+inbound:
+  http:
+    enabled: true
+    base_path: /api
+    port: 8082
+    routes:
+      - path: /consume
+        method: POST
+        handler: mock-handlers.consumer:handle_consume
+      - path: /health
+        method: GET
+        handler: mock-handlers.consumer:handle_health
+
+outbound:
+  http:
+    enabled: true
+    base_url: http://mock-http-server:9090
+
+logging:
+  level: INFO
+
