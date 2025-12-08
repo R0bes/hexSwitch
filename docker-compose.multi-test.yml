@@ -91,6 +91,27 @@ services:
       start_period: 10s
     restart: "no"
 
+  # NATS Message Broker
+  nats-server:
+    image: nats:2.10-alpine
+    container_name: nats-server
+    ports:
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring
+      - "6222:6222"  # Routing port
+    networks:
+      - hexswitch-test-network
+    command:
+      - "-js"  # Enable JetStream
+      - "-m"   # Enable monitoring
+      - "8222"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: "no"
+
   # Mock HTTP Server for testing outbound calls
   mock-http-server:
     image: python:3.12-slim
