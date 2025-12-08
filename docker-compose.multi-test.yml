@@ -1,0 +1,115 @@
+services:
+  # Service 1: Producer/Inbound Service
+  hexswitch-producer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: hexswitch:test
+    container_name: hexswitch-producer
+    volumes:
+      - ./tests/integration/fixtures/config-producer.yaml:/app/hex-config.yaml:ro
+      - ./tests/integration/fixtures/mock-handlers:/app/mock-handlers:ro
+    environment:
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=producer
+      - SERVICE_PORT=8080
+    ports:
+      - "8080:8080"
+    networks:
+      - hexswitch-test-network
+    # Keep container running for tests (since runtime is not implemented yet)
+    command: ["tail", "-f", "/dev/null"]
+    healthcheck:
+      test: ["CMD", "hexswitch", "validate"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: "no"
+
+  # Service 2: Processor/Middleware Service
+  hexswitch-processor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: hexswitch:test
+    container_name: hexswitch-processor
+    volumes:
+      - ./tests/integration/fixtures/config-processor.yaml:/app/hex-config.yaml:ro
+      - ./tests/integration/fixtures/mock-handlers:/app/mock-handlers:ro
+    environment:
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=processor
+      - SERVICE_PORT=8081
+      - PRODUCER_URL=http://hexswitch-producer:8080
+    ports:
+      - "8081:8081"
+    networks:
+      - hexswitch-test-network
+    depends_on:
+      hexswitch-producer:
+        condition: service_healthy
+    # Keep container running for tests (since runtime is not implemented yet)
+    command: ["tail", "-f", "/dev/null"]
+    healthcheck:
+      test: ["CMD", "hexswitch", "validate"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: "no"
+
+  # Service 3: Consumer/Outbound Service
+  hexswitch-consumer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: hexswitch:test
+    container_name: hexswitch-consumer
+    volumes:
+      - ./tests/integration/fixtures/config-consumer.yaml:/app/hex-config.yaml:ro
+      - ./tests/integration/fixtures/mock-handlers:/app/mock-handlers:ro
+    environment:
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=consumer
+      - SERVICE_PORT=8082
+      - PROCESSOR_URL=http://hexswitch-processor:8081
+    ports:
+      - "8082:8082"
+    networks:
+      - hexswitch-test-network
+    depends_on:
+      hexswitch-processor:
+        condition: service_healthy
+    # Keep container running for tests (since runtime is not implemented yet)
+    command: ["tail", "-f", "/dev/null"]
+    healthcheck:
+      test: ["CMD", "hexswitch", "validate"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: "no"
+
+  # Mock HTTP Server for testing outbound calls
+  mock-http-server:
+    image: python:3.12-slim
+    container_name: mock-http-server
+    volumes:
+      - ./tests/integration/fixtures/mock-server.py:/app/mock-server.py:ro
+    command: ["python", "/app/mock-server.py"]
+    ports:
+      - "9090:9090"
+    networks:
+      - hexswitch-test-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9090/health').read()"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: "no"
+
+networks:
+  hexswitch-test-network:
+    driver: bridge
+
