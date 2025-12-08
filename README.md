@@ -50,6 +50,12 @@ Run Docker integration tests:
 pytest tests/integration/test_docker.py -m docker
 ```
 
+Run multi-container integration tests:
+
+```bash
+pytest tests/integration/test_multi_container.py -v
+```
+
 Or use the test scripts:
 
 ```bash
@@ -58,6 +64,21 @@ Or use the test scripts:
 
 # Windows PowerShell
 .\scripts\test-docker.ps1
+```
+
+### Multi-Container Testing
+
+Test interactions between multiple HexSwitch instances:
+
+```bash
+# Start multi-container setup
+docker compose -f docker-compose.multi-test.yml up -d
+
+# Run tests
+pytest tests/integration/test_multi_container.py -v
+
+# Stop and cleanup
+docker compose -f docker-compose.multi-test.yml down -v
 ```
 
 For detailed development instructions, see [Development Guide](docs/development_guide.md).
