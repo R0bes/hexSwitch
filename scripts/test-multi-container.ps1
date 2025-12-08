@@ -102,9 +102,46 @@ if ($LASTEXITCODE -eq 0) {
     }
 }
 
-# Test 5: Mock server health
+# Test 5: NATS server health
 Write-Host ""
-Write-Host "Test 5: Mock server health" -ForegroundColor Yellow
+Write-Host "Test 5: NATS server health" -ForegroundColor Yellow
+try {
+    $response = Invoke-WebRequest -Uri "http://localhost:8222/healthz" -TimeoutSec 5 -UseBasicParsing
+    if ($response.StatusCode -eq 200) {
+        Write-Host "✓ NATS server is healthy" -ForegroundColor Green
+    } else {
+        Write-Host "✗ NATS server health check failed" -ForegroundColor Red
+        docker compose -f $COMPOSE_FILE down -v
+        exit 1
+    }
+} catch {
+    Write-Host "✗ NATS server not responding" -ForegroundColor Red
+    docker compose -f $COMPOSE_FILE down -v
+    exit 1
+}
+
+# Test 6: NATS monitoring
+Write-Host ""
+Write-Host "Test 6: NATS monitoring endpoint" -ForegroundColor Yellow
+try {
+    $response = Invoke-WebRequest -Uri "http://localhost:8222/varz" -TimeoutSec 5 -UseBasicParsing
+    if ($response.StatusCode -eq 200) {
+        $data = $response.Content | ConvertFrom-Json
+        if ($data.server_id) {
+            Write-Host "✓ NATS monitoring accessible (Server ID: $($data.server_id))" -ForegroundColor Green
+        } else {
+            Write-Host "⚠ NATS monitoring accessible but unexpected format" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "⚠ NATS monitoring endpoint returned unexpected status" -ForegroundColor Yellow
+    }
+} catch {
+    Write-Host "⚠ NATS monitoring not accessible (may be expected)" -ForegroundColor Yellow
+}
+
+# Test 7: Mock server health
+Write-Host ""
+Write-Host "Test 7: Mock server health" -ForegroundColor Yellow
 try {
     $response = Invoke-WebRequest -Uri "http://localhost:9090/health" -TimeoutSec 5 -UseBasicParsing
     if ($response.StatusCode -eq 200) {

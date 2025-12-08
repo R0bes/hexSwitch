@@ -68,10 +68,10 @@ Or use the test scripts:
 
 ### Multi-Container Testing
 
-Test interactions between multiple HexSwitch instances:
+Test interactions between multiple HexSwitch instances with NATS message broker:
 
 ```bash
-# Start multi-container setup
+# Start multi-container setup (includes NATS server)
 docker compose -f docker-compose.multi-test.yml up -d
 
 # Run tests
@@ -80,6 +80,12 @@ pytest tests/integration/test_multi_container.py -v
 # Stop and cleanup
 docker compose -f docker-compose.multi-test.yml down -v
 ```
+
+The multi-container setup includes:
+- 3 HexSwitch instances (producer, processor, consumer)
+- NATS message broker (with JetStream enabled)
+- Mock HTTP server for outbound testing
+- Bridge network for inter-container communication
 
 For detailed development instructions, see [Development Guide](docs/development_guide.md).
 
