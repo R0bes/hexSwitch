@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  hexswitch-test:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: hexswitch:test
+    container_name: hexswitch-test-container
+    volumes:
+      - ./hex-config.yaml:/app/hex-config.yaml:ro
+    environment:
+      - LOG_LEVEL=INFO
+    command: ["hexswitch", "version"]
+    # Don't keep container running
+    restart: "no"
+
+  hexswitch-validate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: hexswitch:test
+    container_name: hexswitch-validate-container
+    volumes:
+      - ./hex-config.yaml:/app/hex-config.yaml:ro
+    environment:
+      - LOG_LEVEL=DEBUG
+    command: ["hexswitch", "validate"]
+    depends_on:
+      - hexswitch-test
+    restart: "no"
+
+  hexswitch-dry-run:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: hexswitch:test
+    container_name: hexswitch-dry-run-container
+    volumes:
+      - ./hex-config.yaml:/app/hex-config.yaml:ro
+    environment:
+      - LOG_LEVEL=INFO
+    command: ["hexswitch", "run", "--dry-run"]
+    depends_on:
+      - hexswitch-validate
+    restart: "no"
+
