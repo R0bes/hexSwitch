@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for HexSwitch
 # Build stage
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
@@ -13,19 +13,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml ./
 COPY src/ ./src/
 
-# Install the package
-RUN pip install --no-cache-dir --user -e .
+# Install the package system-wide (will be copied to user location)
+RUN pip install --no-cache-dir -e .
 
 # Runtime stage
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy installed package from builder
-COPY --from=builder /root/.local /root/.local
+# Copy project files and install package properly
+COPY pyproject.toml ./
+COPY src/ ./src/
 
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Install the package (not editable, regular install)
+RUN pip install --no-cache-dir .
 
 # Create non-root user for security
 RUN useradd -m -u 1000 hexswitch && \
