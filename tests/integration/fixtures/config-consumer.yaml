@@ -14,11 +14,23 @@ inbound:
       - path: /health
         method: GET
         handler: mock-handlers.consumer:handle_health
+  nats:
+    enabled: true
+    url: nats://nats-server:4222
+    subjects:
+      - "processor.events"
+      - "consumer.commands"
 
 outbound:
   http:
     enabled: true
     base_url: http://mock-http-server:9090
+  nats:
+    enabled: true
+    url: nats://nats-server:4222
+    subjects:
+      - "consumer.events"
+      - "final.commands"
 
 logging:
   level: INFO

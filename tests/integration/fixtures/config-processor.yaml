@@ -14,11 +14,23 @@ inbound:
       - path: /health
         method: GET
         handler: mock-handlers.processor:handle_health
+  nats:
+    enabled: true
+    url: nats://nats-server:4222
+    subjects:
+      - "producer.events"
+      - "processor.commands"
 
 outbound:
   http:
     enabled: true
     base_url: http://hexswitch-consumer:8082
+  nats:
+    enabled: true
+    url: nats://nats-server:4222
+    subjects:
+      - "processor.events"
+      - "consumer.commands"
 
 logging:
   level: INFO

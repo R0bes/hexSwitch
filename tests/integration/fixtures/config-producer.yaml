@@ -19,6 +19,12 @@ outbound:
   http:
     enabled: true
     base_url: http://hexswitch-processor:8081
+  nats:
+    enabled: true
+    url: nats://nats-server:4222
+    subjects:
+      - "producer.events"
+      - "producer.commands"
 
 logging:
   level: INFO
