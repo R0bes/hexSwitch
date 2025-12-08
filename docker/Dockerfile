@@ -19,6 +19,14 @@ RUN pip install --no-cache-dir -e .
 # Runtime stage
 FROM python:3.12-slim
 
+ARG VERSION=0.1.0
+ENV HEXSWITCH_VERSION=${VERSION}
+
+LABEL org.opencontainers.image.title="HexSwitch"
+LABEL org.opencontainers.image.description="Hexagonal runtime switchboard for config-driven microservices"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.vendor="HexSwitch Contributors"
+
 WORKDIR /app
 
 # Copy project files and install package properly
