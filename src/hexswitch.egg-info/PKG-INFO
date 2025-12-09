@@ -1,3 +1,23 @@
+Metadata-Version: 2.4
+Name: hexswitch
+Version: 0.1.0
+Summary: Hexagonal runtime switchboard for config-driven microservices
+Author: HexSwitch Contributors
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: dev
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: mypy>=1.5.0; extra == "dev"
+Requires-Dist: radon>=6.0.0; extra == "dev"
+
 # HexSwitch
 
 Hexagonal runtime switchboard for config-driven microservices.
@@ -6,7 +26,7 @@ Hexagonal runtime switchboard for config-driven microservices.
 
 HexSwitch is a runtime system designed to orchestrate microservices using a hexagonal architecture pattern. It provides a configuration-driven approach to wiring together inbound and outbound adapters, enabling flexible and maintainable service communication.
 
-**Status**: Core runtime functionality is implemented, including adapter framework, HTTP inbound adapter, and runtime orchestration. The system can now run microservices with config-driven adapter wiring.
+**Note**: This repository is currently in its foundational scaffold phase. The project structure, tooling, and CI/CD pipelines are established, but no runtime behavior is implemented yet.
 
 ## Installation
 
@@ -30,55 +50,6 @@ Run with coverage report:
 
 ```bash
 pytest --cov=src/hexswitch --cov-report=html
-```
-
-Run only unit tests:
-
-```bash
-pytest tests/unit/
-```
-
-Run only integration tests:
-
-```bash
-pytest tests/integration/
-```
-
-Run Docker integration tests:
-
-```bash
-pytest tests/integration/test_docker.py -m docker
-```
-
-Run multi-container integration tests:
-
-```bash
-pytest tests/integration/test_multi_container.py -v
-```
-
-Or use the test scripts:
-
-```bash
-# Linux/Mac
-./scripts/test-docker.sh
-
-# Windows PowerShell
-.\scripts\test-docker.ps1
-```
-
-### Multi-Container Testing
-
-Test interactions between multiple HexSwitch instances:
-
-```bash
-# Start multi-container setup
-docker compose -f docker-compose.multi-test.yml up -d
-
-# Run tests
-pytest tests/integration/test_multi_container.py -v
-
-# Stop and cleanup
-docker compose -f docker-compose.multi-test.yml down -v
 ```
 
 For detailed development instructions, see [Development Guide](docs/development_guide.md).
@@ -116,10 +87,10 @@ hexswitch run --dry-run
 # Shows execution plan without starting runtime
 ```
 
-**Run runtime:**
+**Run runtime (not yet implemented):**
 ```bash
 hexswitch run
-# Starts the runtime with all enabled adapters
+# Will start runtime once implemented
 ```
 
 ### Global Options
@@ -139,7 +110,7 @@ hexswitch validate
 # 3. Preview execution plan
 hexswitch run --dry-run
 
-# 4. Run runtime
+# 4. Run (when implemented)
 hexswitch run
 ```
 
@@ -160,7 +131,7 @@ bin/hexswitch-dev.sh version
 
 ## Project Structure
 
-- `src/hexswitch/` - Python package (core runtime, adapters, handlers)
+- `src/hexswitch/` - Python package (skeleton)
 - `tests/` - Test suite (unit and integration tests)
 - `docs/` - Project documentation
 - `docker/` - Dockerfiles and related scripts

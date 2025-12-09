@@ -124,6 +124,135 @@ def _validate_adapters(adapters: dict[str, Any], section_name: str) -> None:
                     "'enabled' must be a boolean"
                 )
 
+        # Validate HTTP adapter specific configuration
+        if adapter_name == "http" and section_name == "inbound":
+            _validate_http_adapter(adapter_name, adapter_config, section_name)
+
+
+def _validate_http_adapter(
+    adapter_name: str, adapter_config: dict[str, Any], section_name: str
+) -> None:
+    """Validate HTTP adapter configuration.
+
+    Args:
+        adapter_name: Name of the adapter.
+        adapter_config: Adapter configuration dictionary.
+        section_name: Name of the section (for error messages).
+
+    Raises:
+        ConfigError: If validation fails.
+    """
+    # Validate base_path (optional, must be string if present)
+    if "base_path" in adapter_config:
+        if not isinstance(adapter_config["base_path"], str):
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'base_path' must be a string"
+            )
+
+    # Validate port (optional, must be integer if present)
+    if "port" in adapter_config:
+        if not isinstance(adapter_config["port"], int):
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'port' must be an integer"
+            )
+        if not (1 <= adapter_config["port"] <= 65535):
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'port' must be between 1 and 65535"
+            )
+
+    # Validate routes (optional, must be list if present)
+    if "routes" in adapter_config:
+        routes = adapter_config["routes"]
+        if not isinstance(routes, list):
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'routes' must be a list"
+            )
+
+        for i, route in enumerate(routes):
+            if not isinstance(route, dict):
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i} must be a dictionary"
+                )
+
+            # Validate required route fields
+            if "path" not in route:
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i} must contain 'path'"
+                )
+            if not isinstance(route["path"], str):
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i}: 'path' must be a string"
+                )
+
+            if "method" not in route:
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i} must contain 'method'"
+                )
+            if not isinstance(route["method"], str):
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i}: 'method' must be a string"
+                )
+            if route["method"].upper() not in ["GET", "POST", "PUT", "DELETE", "PATCH"]:
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i}: 'method' must be one of: GET, POST, PUT, DELETE, PATCH"
+                )
+
+            if "handler" not in route:
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i} must contain 'handler'"
+                )
+            if not isinstance(route["handler"], str):
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Route at index {i}: 'handler' must be a string"
+                )
+            # Validate handler format (module:function)
+            _validate_handler_reference(route["handler"], adapter_name, section_name, i)
+
+
+def _validate_handler_reference(
+    handler_path: str, adapter_name: str, section_name: str, route_index: int | None = None
+) -> None:
+    """Validate handler reference format.
+
+    Args:
+        handler_path: Handler reference string.
+        adapter_name: Name of the adapter (for error messages).
+        section_name: Name of the section (for error messages).
+        route_index: Optional route index (for error messages).
+
+    Raises:
+        ConfigError: If validation fails.
+    """
+    if ":" not in handler_path:
+        route_info = f" at route index {route_index}" if route_index is not None else ""
+        raise ConfigError(
+            f"Adapter '{adapter_name}' in section '{section_name}'{route_info}: "
+            f"Invalid handler format '{handler_path}'. "
+            "Expected format: 'module.path:function_name'"
+        )
+
+    module_path, function_name = handler_path.rsplit(":", 1)
+
+    if not module_path or not function_name:
+        route_info = f" at route index {route_index}" if route_index is not None else ""
+        raise ConfigError(
+            f"Adapter '{adapter_name}' in section '{section_name}'{route_info}: "
+            f"Invalid handler format '{handler_path}'. "
+            "Module path and function name must not be empty."
+        )
+
 
 def get_example_config() -> str:
     """Generate example configuration file content.

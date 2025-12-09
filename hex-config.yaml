@@ -1,0 +1,20 @@
+service:
+  name: example-service
+  runtime: python
+
+inbound:
+  http:
+    enabled: true
+    base_path: /api
+    routes:
+      - path: /hello
+        method: GET
+        handler: adapters.http_handlers:hello
+
+outbound:
+  postgres:
+    enabled: false
+    dsn_env: POSTGRES_DSN
+
+logging:
+  level: INFO

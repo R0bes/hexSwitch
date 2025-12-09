@@ -3,6 +3,7 @@
 import pytest
 
 from hexswitch.runtime import (
+    Runtime,
     build_execution_plan,
     print_execution_plan,
     run_runtime,
@@ -81,6 +82,48 @@ def test_print_execution_plan(caplog: pytest.LogCaptureFixture) -> None:
         assert "test-service" in caplog.text
         assert "http" in caplog.text
         assert "postgres" in caplog.text
+        assert "Ready to start runtime" in caplog.text
+
+
+def test_run_runtime_minimal_config() -> None:
+    """Test run_runtime with minimal configuration."""
+    config = {"service": {"name": "test-service"}}
+    runtime = Runtime(config)
+    runtime.start()
+    runtime.request_shutdown()
+    runtime.run()  # Should exit immediately due to shutdown request
+    runtime.stop()
+
+
+def test_run_runtime_with_http_adapter() -> None:
+    """Test run_runtime with HTTP adapter."""
+    import socket
+    import time
+
+    # Find a free port
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        free_port = s.getsockname()[1]
+
+    config = {
+        "service": {"name": "test-service"},
+        "inbound": {
+            "http": {
+                "enabled": True,
+                "port": free_port,
+                "routes": [],
+            }
+        },
+    }
+    runtime = Runtime(config)
+
+    try:
+        runtime.start()
+        time.sleep(0.1)  # Give adapter time to start
+        runtime.request_shutdown()
+        runtime.run()  # Should exit due to shutdown request
+    finally:
+        runtime.stop()
 
 
 def test_run_runtime_not_implemented() -> None:

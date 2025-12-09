@@ -2,7 +2,7 @@
 
 ## Introduction
 
-HexSwitch is designed as a **hexagonal runtime switchboard for config-driven microservices**. This document provides a high-level overview of the intended architecture. **Note**: This is a placeholder document. No runtime behavior is currently implemented.
+HexSwitch is designed as a **hexagonal runtime switchboard for config-driven microservices**. This document provides a high-level overview of the architecture and current implementation status.
 
 ## Core Concept
 
@@ -76,27 +76,59 @@ HexSwitch follows the hexagonal architecture (ports and adapters) pattern:
 
 ## Current Status
 
-⚠️ **Important**: This architecture is a **placeholder**. The current implementation includes:
+The current implementation includes:
 
 - ✅ Project structure and scaffolding
 - ✅ Development tooling (linting, testing, CI/CD)
-- ✅ Basic CLI skeleton
+- ✅ CLI with full command support
 - ✅ Test framework setup
-- ❌ No runtime implementation
-- ❌ No adapter implementations
-- ❌ No configuration parsing
-- ❌ No service orchestration
+- ✅ **Core Runtime**: Runtime orchestration with lifecycle management
+- ✅ **Configuration Parser**: Load and validate YAML configuration files
+- ✅ **Adapter Framework**: Base classes and interfaces for adapters
+- ✅ **HTTP Inbound Adapter**: REST API endpoints with route-based handler mapping
+- ✅ **Handler System**: Dynamic loading and execution of handler functions
+- ✅ **Orchestration**: Wire adapters together based on configuration
+- ⏳ **Outbound Adapters**: Database and message bus adapters (planned)
+- ⏳ **Additional Inbound Adapters**: gRPC, WebSocket, Message Bus (planned)
+- ⏳ **Observability**: Metrics and tracing (planned)
+
+## Implemented Components
+
+### Core Runtime
+
+The runtime (`src/hexswitch/runtime.py`) is responsible for:
+
+- ✅ Loading and parsing configuration files
+- ✅ Managing the lifecycle of adapters (start/stop)
+- ✅ Graceful shutdown with signal handling
+- ✅ Adapter factory pattern for creating adapters
+
+### HTTP Inbound Adapter
+
+The HTTP adapter (`src/hexswitch/adapters/http/`) provides:
+
+- ✅ REST API endpoints with configurable base path
+- ✅ Route-based handler mapping (path, method, handler)
+- ✅ Support for GET, POST, PUT, DELETE, PATCH methods
+- ✅ JSON request/response handling
+- ✅ Configurable port (default: 8000)
+
+### Handler System
+
+The handler system (`src/hexswitch/handlers/`) enables:
+
+- ✅ Dynamic loading of handler functions from string references
+- ✅ Format: `module.path:function_name`
+- ✅ Validation and error handling
 
 ## Future Development
 
 Future development will focus on:
 
-1. **Core Runtime**: Implement the basic runtime engine
-2. **Configuration Parser**: Load and validate configuration files
-3. **Adapter Framework**: Create the base classes and interfaces for adapters
-4. **First Adapters**: Implement initial inbound/outbound adapters (e.g., HTTP)
-5. **Orchestration**: Wire adapters together based on configuration
-6. **Observability**: Add logging, metrics, and tracing
+1. **Outbound Adapters**: Database adapters (PostgreSQL, etc.), HTTP client adapter
+2. **Additional Inbound Adapters**: gRPC, WebSocket, Message Bus (RabbitMQ, Kafka)
+3. **Observability**: Metrics collection, distributed tracing
+4. **Advanced Features**: Live config reload, hot adapter swap, multi-runtime support
 
 ## Related Documentation
 
