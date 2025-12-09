@@ -1,0 +1,195 @@
+:root {
+  /* Color Palette - Dark Mode Cyberpunk */
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #16213e;
+  
+  --accent-teal: #00f5ff;
+  
+  /* Inbound colors (Cyan) - harmonische Abstufung */
+  --accent-inbound-light: #00e5ff; /* Ports - hellstes Cyan */
+  --accent-inbound: #00bcd4; /* Adapters - mittleres Cyan */
+  --accent-inbound-dark: #008ba3; /* Mocks - dunkelstes Cyan */
+  
+  /* Outbound colors (Magenta/Pink) - harmonische Abstufung */
+  --accent-outbound-light: #ea00ff; /* Ports - hellstes Magenta */
+  --accent-outbound: #da00da; /* Adapters - mittleres Magenta */
+  --accent-outbound-dark: #a000c0; /* Mocks - dunkelstes Magenta */
+  
+  /* Core and Shell - own color scheme */
+  --accent-core: #10b981; /* Emerald/Green for core */
+  --accent-shell: #047857; /* Dark emerald for shell (dark variant of core) */
+  
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --text-muted: #707070;
+  
+  --border-color: #1a1a2e;
+  --border-glow: rgba(0, 245, 255, 0.3);
+  
+  /* Glow Effects */
+  --glow-teal: 0 0 10px rgba(0, 245, 255, 0.5),
+               0 0 20px rgba(0, 245, 255, 0.3),
+               0 0 30px rgba(0, 245, 255, 0.1);
+  
+  --glow-inbound-light: 0 0 10px rgba(0, 229, 255, 0.5),
+                        0 0 20px rgba(0, 229, 255, 0.3);
+  --glow-inbound: 0 0 10px rgba(0, 188, 212, 0.5),
+                  0 0 20px rgba(0, 188, 212, 0.3);
+  --glow-inbound-dark: 0 0 10px rgba(0, 139, 163, 0.5),
+                       0 0 20px rgba(0, 139, 163, 0.3);
+  
+  --glow-outbound-light: 0 0 10px rgba(234, 0, 255, 0.5),
+                         0 0 20px rgba(234, 0, 255, 0.3);
+  --glow-outbound: 0 0 10px rgba(218, 0, 218, 0.5),
+                   0 0 20px rgba(218, 0, 218, 0.3);
+  --glow-outbound-dark: 0 0 10px rgba(160, 0, 192, 0.5),
+                        0 0 20px rgba(160, 0, 192, 0.3);
+  
+  --glow-blue: 0 0 10px rgba(0, 102, 255, 0.5),
+               0 0 20px rgba(0, 102, 255, 0.3);
+  
+  --glow-core: 0 0 10px rgba(16, 185, 129, 0.5),
+               0 0 20px rgba(16, 185, 129, 0.3);
+  
+  --glow-shell: 0 0 10px rgba(4, 120, 87, 0.5),
+                0 0 20px rgba(4, 120, 87, 0.3);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.6);
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Background Pattern */
+.hex-grid-bg {
+  background-image: 
+    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Glow Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.7;
+    filter: brightness(1.2);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Connection Line Animation - Inbound (towards core) */
+/* Animation flows from x1 (adapter) to x2 (port/core) */
+/* stroke-dashoffset: 12 to 0 makes pattern flow from start to end */
+@keyframes flow-pulse-inbound {
+  0% {
+    stroke-dashoffset: 12;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+}
+
+/* Connection Line Animation - Outbound (away from core, towards adapter) */
+/* Animation flows from x1 (port/core) to x2 (adapter) */
+/* stroke-dashoffset: 12 to 0 makes pattern flow from start (x1) to end (x2) */
+@keyframes flow-pulse-outbound {
+  0% {
+    stroke-dashoffset: 12;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+}
+
+.flow-line-inbound {
+  stroke-dasharray: 8, 4;
+  animation: flow-pulse-inbound 3s linear infinite;
+}
+
+.flow-line-outbound {
+  stroke-dasharray: 8, 4;
+  animation: flow-pulse-outbound 3s linear infinite;
+}
+
+/* Dashed Connection Line Animation - Inbound Mock to Adapter (towards core) */
+/* Animation flows from x1 (mock) to x2 (adapter) */
+/* stroke-dashoffset: 12 to 0 makes pattern flow from start to end */
+@keyframes flow-pulse-dashed {
+  0% {
+    stroke-dashoffset: 12;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+}
+
+.flow-line-dashed {
+  stroke-dasharray: 8, 4;
+  animation: flow-pulse-dashed 2.5s linear infinite;
+}
+
+/* Dashed Connection Line Animation - Outbound Adapter to Mock (away from core) */
+/* Animation flows from x1 (adapter) to x2 (mock) */
+/* stroke-dashoffset: 12 to 0 makes pattern flow from start (x1) to end (x2) */
+@keyframes flow-pulse-dashed-reverse {
+  0% {
+    stroke-dashoffset: 12;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+}
+
+.flow-line-dashed-reverse {
+  stroke-dasharray: 8, 4;
+  animation: flow-pulse-dashed-reverse 2.5s linear infinite;
+}
+
