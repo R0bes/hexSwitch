@@ -7,8 +7,8 @@ import pytest
 import yaml
 
 from hexswitch.shared.config import (
-    ConfigError,
     DEFAULT_CONFIG_PATH,
+    ConfigError,
     get_example_config,
     load_config,
     validate_config,
@@ -92,7 +92,7 @@ def test_validate_config_invalid_inbound_type() -> None:
 
 def test_validate_config_adapter_enabled_not_boolean() -> None:
     """Test that validation fails when adapter enabled flag is not boolean.
-    
+
     Note: Pydantic automatically converts truthy strings to True, so we test with
     a value that cannot be converted to boolean.
     """

@@ -10,9 +10,9 @@ from typing import Any
 
 import grpc
 
+from hexswitch.adapters.base import OutboundAdapter
 from hexswitch.adapters.exceptions import AdapterConnectionError
 from hexswitch.adapters.grpc._Grpc_Envelope import GrpcEnvelope
-from hexswitch.adapters.base import OutboundAdapter
 from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
@@ -162,69 +162,69 @@ class GrpcAdapterClient(OutboundAdapter):
 
     def from_envelope(self, envelope: Envelope) -> dict[str, Any]:
         """Convert Envelope request to gRPC request.
-        
+
         Args:
             envelope: Request envelope.
-            
+
         Returns:
             Request data dictionary (to be converted to protobuf message).
         """
         return self._converter.envelope_to_request(envelope)
-    
+
     def to_envelope(
         self,
         response: Any,
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert gRPC response to Envelope.
-        
+
         Args:
             response: gRPC response object (protobuf message).
             original_envelope: Original request envelope.
-            
+
         Returns:
             Response envelope.
         """
         return self._converter.response_to_envelope(response, original_envelope)
-    
+
     def request(self, envelope: Envelope) -> Envelope:
         """Make gRPC request using Envelope.
-        
+
         Converts Envelope → gRPC Request → gRPC Response → Envelope.
-        
+
         Args:
             envelope: Request envelope with path, body, metadata, etc.
-            
+
         Returns:
             Response envelope.
-            
+
         Raises:
             RuntimeError: If adapter is not connected.
         """
         if not self._connected or not self.channel or not self.stub:
             raise RuntimeError(f"gRPC client adapter '{self.name}' is not connected")
-        
+
         # Extract method name from path (e.g., "/ServiceName/MethodName" -> "MethodName")
         path_parts = envelope.path.strip("/").split("/")
         method_name = path_parts[-1] if path_parts else "unknown"
-        
+
         # Extract metadata
-        grpc_metadata = envelope.metadata.get("grpc_metadata", {})
-        
+        envelope.metadata.get("grpc_metadata", {})
+
         # Convert Envelope body to gRPC request using converter
-        request_dict = self.from_envelope(envelope)
-        
+        self.from_envelope(envelope)
+
         # TODO: Convert request_dict to protobuf message using compiled stubs
         # For now, we'll use a simplified approach
-        
+
         call_timeout = self.timeout
-        
+
         try:
             # This is a simplified implementation
             # In production, you would use the actual generated stub method
             # For example: response = self.stub.MethodName(request, timeout=call_timeout, metadata=grpc_metadata)
             logger.debug(f"Calling {self.service_name}.{method_name} with timeout {call_timeout}")
-            
+
             # Placeholder - would use actual stub method here
             # For now, return error indicating stub is needed
             return Envelope.error(

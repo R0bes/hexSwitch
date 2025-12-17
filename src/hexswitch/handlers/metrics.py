@@ -7,15 +7,15 @@ from hexswitch.shared.observability import get_global_metrics_collector
 
 def _format_prometheus(metrics: dict) -> str:
     """Format metrics dictionary as Prometheus text format.
-    
+
     Args:
         metrics: Dictionary with counters, gauges, and histograms.
-        
+
     Returns:
         Prometheus-formatted string.
     """
     lines = []
-    
+
     # Format counters
     if "counters" in metrics:
         for key, value in metrics["counters"].items():
@@ -26,7 +26,7 @@ def _format_prometheus(metrics: dict) -> str:
                 lines.append(f"{name}{{{labels}}} {value}")
             else:
                 lines.append(f"{key} {value}")
-    
+
     # Format gauges
     if "gauges" in metrics:
         for key, value in metrics["gauges"].items():
@@ -36,7 +36,7 @@ def _format_prometheus(metrics: dict) -> str:
                 lines.append(f"{name}{{{labels}}} {value}")
             else:
                 lines.append(f"{key} {value}")
-    
+
     # Format histograms
     if "histograms" in metrics:
         for key, value in metrics["histograms"].items():
@@ -46,7 +46,7 @@ def _format_prometheus(metrics: dict) -> str:
                 lines.append(f"{name}{{{labels}}} {value}")
             else:
                 lines.append(f"{key} {value}")
-    
+
     return "\n".join(lines) if lines else "# No metrics available"
 
 
@@ -56,7 +56,7 @@ def metrics_handler(envelope: Envelope) -> Envelope:
     metrics = get_global_metrics_collector()
     all_metrics = metrics.get_all_metrics()
     prometheus_output = _format_prometheus(all_metrics)
-    
+
     return Envelope(
         path=envelope.path,
         status_code=200,

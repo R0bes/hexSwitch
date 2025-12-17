@@ -1,8 +1,8 @@
 """Base service class for business logic layer."""
 
 import logging
-from typing import Generic, TypeVar, Optional, List, Any, Dict
 from abc import ABC
+from typing import Generic, List, TypeVar
 
 from hexswitch.domain.repositories.base_repository import BaseRepositoryPort
 
@@ -12,22 +12,22 @@ R = TypeVar('R', bound=BaseRepositoryPort)
 
 class BaseService(ABC, Generic[T, R]):
     """Base service class for business logic operations.
-    
+
     Services contain business logic and coordinate between repositories
     and other services. They depend on repository ports, not implementations.
-    
+
     Example:
         class ExampleService(BaseService[ExampleEntity, ExampleRepositoryPort]):
             def __init__(self, repository: ExampleRepositoryPort):
                 super().__init__(repository)
-            
+
             def get_by_name(self, name: str) -> ExampleEntity:
                 entity = self.repository.find_by_name(name)
                 if not entity:
                     raise ValueError(f"Entity with name '{name}' not found")
                 return entity
     """
-    
+
     def __init__(self, repository: R) -> None:
         """Initialize service with repository.
 

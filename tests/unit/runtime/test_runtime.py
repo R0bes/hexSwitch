@@ -6,7 +6,6 @@ from hexswitch.runtime import (
     Runtime,
     build_execution_plan,
     print_execution_plan,
-    run_runtime,
 )
 
 
@@ -89,20 +88,19 @@ def test_print_execution_plan(caplog: pytest.LogCaptureFixture) -> None:
 def test_run_runtime_minimal_config() -> None:
     """Test run_runtime with minimal configuration."""
     import threading
-    import time
 
     config = {"service": {"name": "test-service"}}
     runtime = Runtime(config)
-    
+
     try:
         runtime.start()
         runtime.request_shutdown()
-        
+
         # Run in thread with timeout to avoid hanging
         run_thread = threading.Thread(target=runtime.run, daemon=True)
         run_thread.start()
         run_thread.join(timeout=2.0)
-        
+
         # Should have exited quickly due to shutdown request
         assert not run_thread.is_alive() or runtime._shutdown_requested
     finally:
@@ -137,12 +135,12 @@ def test_run_runtime_with_http_adapter() -> None:
         runtime.start()
         time.sleep(0.1)  # Give adapter time to start
         runtime.request_shutdown()
-        
+
         # Run in thread with timeout to avoid hanging
         run_thread = threading.Thread(target=runtime.run, daemon=True)
         run_thread.start()
         run_thread.join(timeout=2.0)
-        
+
         # Should have exited quickly due to shutdown request
         assert not run_thread.is_alive() or runtime._shutdown_requested
     finally:

@@ -1,6 +1,5 @@
 """Unit tests for handler helpers."""
 
-import json
 
 from hexswitch.shared.helpers import (
     extract_query_params,

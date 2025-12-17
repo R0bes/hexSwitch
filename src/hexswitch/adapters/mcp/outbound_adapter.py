@@ -1,12 +1,11 @@
 """MCP (Model Context Protocol) client outbound adapter implementation."""
 
-import json
 import logging
 from typing import Any
 
+from hexswitch.adapters.base import OutboundAdapter
 from hexswitch.adapters.exceptions import AdapterConnectionError
 from hexswitch.adapters.http import HttpAdapterClient
-from hexswitch.adapters.base import OutboundAdapter
 from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
@@ -91,24 +90,24 @@ class McpAdapterClient(OutboundAdapter):
 
     def request(self, envelope: Envelope) -> Envelope:
         """Make MCP JSON-RPC request using Envelope.
-        
+
         Converts Envelope → MCP JSON-RPC Request → MCP JSON-RPC Response → Envelope.
-        
+
         Args:
             envelope: Request envelope with path (method name), body (params), etc.
-            
+
         Returns:
             Response envelope.
-            
+
         Raises:
             RuntimeError: If adapter is not connected.
         """
         if not self._http_client.is_connected():
             raise RuntimeError(f"MCP client adapter '{self.name}' HTTP client is not connected")
-        
+
         # Convert Envelope → MCP JSON-RPC request using converter
         jsonrpc_request = self.from_envelope(envelope)
-        
+
         # Create Envelope for HTTP request
         http_envelope = Envelope(
             path="",
@@ -121,11 +120,11 @@ class McpAdapterClient(OutboundAdapter):
                 "mcp_request_id": jsonrpc_request.get("id"),
             },
         )
-        
+
         try:
             # Call HTTP client adapter
             response_envelope = self._http_client.request(http_envelope)
-            
+
             # Parse JSON-RPC response and convert to Envelope using converter
             if response_envelope.data:
                 return self.to_envelope(response_envelope.data, envelope)
@@ -134,20 +133,20 @@ class McpAdapterClient(OutboundAdapter):
         except Exception as e:
             logger.error(f"MCP request failed: {e}")
             return Envelope.error(500, str(e))
-    
+
     def from_envelope(self, envelope: Envelope) -> dict[str, Any]:
         """Convert Envelope request to MCP JSON-RPC request.
-        
+
         Args:
             envelope: Request envelope.
-            
+
         Returns:
             MCP JSON-RPC request dictionary.
         """
         # Extract method name from path
         method = envelope.path.strip("/") or envelope.metadata.get("method", "unknown")
         params = envelope.body or {}
-        
+
         request_id = self._get_next_request_id()
         return {
             "jsonrpc": "2.0",
@@ -155,18 +154,18 @@ class McpAdapterClient(OutboundAdapter):
             "method": method,
             "params": params,
         }
-    
+
     def to_envelope(
         self,
         jsonrpc_response: dict[str, Any],
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert MCP JSON-RPC response to Envelope.
-        
+
         Args:
             jsonrpc_response: MCP JSON-RPC response.
             original_envelope: Original request envelope.
-            
+
         Returns:
             Response envelope.
         """
@@ -176,7 +175,7 @@ class McpAdapterClient(OutboundAdapter):
                 error.get("code", 500),
                 f"MCP RPC error: {error.get('message', 'Unknown error')}",
             )
-        
+
         return Envelope(
             path=original_envelope.path if original_envelope else "",
             method=original_envelope.method if original_envelope else None,
@@ -184,7 +183,7 @@ class McpAdapterClient(OutboundAdapter):
             data=jsonrpc_response.get("result", {}),
             metadata=original_envelope.metadata.copy() if original_envelope else {},
         )
-    
+
     def _send_request(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Legacy method for backwards compatibility.
 
@@ -205,10 +204,10 @@ class McpAdapterClient(OutboundAdapter):
             body=params or {},
         )
         response_envelope = self.request(envelope)
-        
+
         if response_envelope.error_message:
             raise ValueError(response_envelope.error_message)
-        
+
         return response_envelope.data or {}
 
     def call_tool(self, tool_name: str, arguments: dict[str, Any] | None = None) -> Any:

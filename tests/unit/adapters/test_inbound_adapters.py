@@ -5,10 +5,10 @@ from typing import Any, Callable
 import pytest
 
 from hexswitch.adapters.base import InboundAdapter
-from tests.unit.adapters.base.adapter_tester import AdapterTester
 from tests.unit.adapters.base.adapter_test_data import (
     INBOUND_ADAPTERS,
 )
+from tests.unit.adapters.base.adapter_tester import AdapterTester
 
 
 @pytest.mark.fast

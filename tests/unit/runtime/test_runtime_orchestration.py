@@ -2,9 +2,7 @@
 
 import pytest
 
-from hexswitch.adapters.exceptions import AdapterError
 from hexswitch.runtime import Runtime
-
 
 # Timeout for runtime tests (in seconds)
 RUNTIME_TEST_TIMEOUT = 10

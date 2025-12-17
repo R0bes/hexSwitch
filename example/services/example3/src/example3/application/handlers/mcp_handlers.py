@@ -3,9 +3,9 @@
 import json
 import logging
 
-from hexswitch.shared.envelope import Envelope
-
 from example3_service.application.services.example3_service import get_example3_service
+
+from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 

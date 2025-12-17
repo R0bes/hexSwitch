@@ -1,13 +1,12 @@
 """Tracing system for HexSwitch using OpenTelemetry."""
 
 import logging
+import sys
 from typing import Any
 
 from opentelemetry import trace
-from opentelemetry.trace import (
-    TracerProvider,
-    Span as OTelSpan,
-)
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace import (
     TracerProvider as SDKTracerProvider,
 )
@@ -17,9 +16,12 @@ from opentelemetry.sdk.trace.export import (
     SpanExporter,
     SpanExportResult,
 )
-from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.sdk.resources import Resource
-import sys
+from opentelemetry.trace import (
+    Span as OTelSpan,
+)
+from opentelemetry.trace import (
+    TracerProvider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ class SafeConsoleSpanExporter(SpanExporter):
 
     def __init__(self, out=None):
         """Initialize safe console exporter.
-        
+
         Args:
             out: Output stream (default: sys.stdout).
         """
@@ -40,10 +42,10 @@ class SafeConsoleSpanExporter(SpanExporter):
 
     def export(self, spans: list[ReadableSpan]) -> SpanExportResult:
         """Export spans with error handling.
-        
+
         Args:
             spans: List of spans to export.
-            
+
         Returns:
             Export result.
         """
@@ -140,7 +142,7 @@ class Span:
         Returns:
             Span as dictionary.
         """
-        context = self._span.get_span_context()
+        self._span.get_span_context()
         attributes = dict(self._span.attributes) if self._span.attributes else {}
         return {
             "name": self.name,
@@ -191,17 +193,17 @@ class Tracer:
             otel_span = self._tracer.start_span(name, context=parent_context)
         else:
             otel_span = self._tracer.start_span(name)
-        
+
         # Set initial tags
         if tags:
             for key, value in tags.items():
                 otel_span.set_attribute(key, value)
-        
+
         # Create wrapper
         span = Span(otel_span)
         if parent:
             span.parent_id = parent.span_id
-        
+
         self._spans.append(span)
         return span
 
@@ -265,27 +267,27 @@ def start_span(
     parent_context = None
     if parent:
         parent_context = trace.set_span_in_context(parent._span)
-    
+
     # Start span with context
     if parent_context:
         otel_span = tracer._tracer.start_span(name, context=parent_context)
     else:
         otel_span = tracer._tracer.start_span(name)
-    
+
     # Set initial tags
     if tags:
         for key, value in tags.items():
             otel_span.set_attribute(key, value)
-    
+
     # Create wrapper
     span = Span(otel_span)
     if parent:
         span.parent_id = parent.span_id
-    
+
     # Set as current span in context
-    context = trace.set_span_in_context(otel_span)
+    trace.set_span_in_context(otel_span)
     trace.use_span(otel_span, end_on_exit=False).__enter__()
-    
+
     tracer._spans.append(span)
     return span
 

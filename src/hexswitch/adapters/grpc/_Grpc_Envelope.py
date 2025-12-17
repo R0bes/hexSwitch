@@ -20,13 +20,13 @@ class GrpcEnvelope:
         method_name: str,
     ) -> Envelope:
         """Convert gRPC request to Envelope.
-        
+
         Args:
             request: gRPC request object (protobuf message).
             context: gRPC context.
             service_name: Service name.
             method_name: Method name.
-            
+
         Returns:
             Request envelope.
         """
@@ -37,10 +37,10 @@ class GrpcEnvelope:
             for key, value in context.invocation_metadata():
                 metadata_dict[key] = value
                 metadata_list.append((key, value))
-        
+
         # Extract trace context from gRPC metadata
         trace_context = extract_trace_context_from_grpc_metadata(metadata_list)
-        
+
         # Convert protobuf message to dict
         request_dict: dict[str, Any] = {}
         if hasattr(request, "DESCRIPTOR"):
@@ -53,7 +53,7 @@ class GrpcEnvelope:
                     request_dict[field_name] = list(field_value) if field_value else []
                 else:
                     request_dict[field_name] = field_value
-        
+
         return Envelope(
             path=f"/{service_name}/{method_name}",
             method=None,  # gRPC doesn't use HTTP methods
@@ -73,25 +73,25 @@ class GrpcEnvelope:
 
     def envelope_to_response(self, envelope: Envelope) -> dict[str, Any]:
         """Convert Envelope to gRPC response.
-        
+
         Args:
             envelope: Response envelope.
-            
+
         Returns:
             Response data dictionary (to be converted to protobuf message).
         """
         if envelope.error_message:
             # Error will be handled by setting context status
             return {}
-        
+
         return envelope.data or {}
 
     def envelope_to_request(self, envelope: Envelope) -> dict[str, Any]:
         """Convert Envelope to gRPC request.
-        
+
         Args:
             envelope: Request envelope.
-            
+
         Returns:
             Request data dictionary (to be converted to protobuf message).
         """
@@ -102,11 +102,11 @@ class GrpcEnvelope:
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert gRPC response to Envelope.
-        
+
         Args:
             response: gRPC response object (protobuf message).
             original_envelope: Original request envelope.
-            
+
         Returns:
             Response envelope.
         """
@@ -120,7 +120,7 @@ class GrpcEnvelope:
                     response_dict[field_name] = list(field_value) if field_value else []
                 else:
                     response_dict[field_name] = field_value
-        
+
         return Envelope(
             path=original_envelope.path if original_envelope else "",
             method=original_envelope.method if original_envelope else None,
@@ -138,12 +138,12 @@ class GrpcEnvelope:
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert gRPC error to Envelope.
-        
+
         Args:
             status_code: gRPC status code.
             error_message: Error message.
             original_envelope: Original request envelope.
-            
+
         Returns:
             Error envelope.
         """
@@ -157,7 +157,7 @@ class GrpcEnvelope:
             http_status = 401
         elif status_code == grpc.StatusCode.PERMISSION_DENIED:
             http_status = 403
-        
+
         return Envelope(
             path=original_envelope.path if original_envelope else "",
             method=original_envelope.method if original_envelope else None,

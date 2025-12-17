@@ -103,6 +103,11 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # unused imports in __init__.py are common
+"tests/**/*.py" = ["B017", "B011", "E402", "F841"]  # pytest patterns and test-specific patterns
+"visual-test-lab/**/*.py" = ["F401"]  # unused imports in test scripts
+"src/hexswitch/ports/*.py" = ["F821"]  # forward references in type hints
+"src/hexswitch/runtime.py" = ["B023"]  # loop variable binding in closures
+"src/hexswitch/adapters/websocket/outbound_adapter.py" = ["B904"]  # exception chaining
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

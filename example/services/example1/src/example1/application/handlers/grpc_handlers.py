@@ -2,9 +2,9 @@
 
 import logging
 
-from hexswitch.shared.envelope import Envelope
-
 from example_service.application.services.example_service import get_example_service
+
+from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 

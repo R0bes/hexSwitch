@@ -7,10 +7,9 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from hexswitch.shared.config import load_config, validate_config
-from hexswitch.shared.envelope import Envelope
 from hexswitch.runtime import Runtime
-
+from hexswitch.shared.config import validate_config
+from hexswitch.shared.envelope import Envelope
 
 # Timeout for integration tests that start runtime (in seconds)
 RUNTIME_TEST_TIMEOUT = 20
@@ -42,7 +41,7 @@ def create_test_handler_module():
 def test_runtime_with_http_adapter_end_to_end() -> None:
     """Test complete runtime execution with HTTP adapter."""
     # Create test handler module
-    test_module = create_test_handler_module()
+    create_test_handler_module()
 
     # Find a free port
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -144,12 +143,12 @@ def test_runtime_graceful_shutdown() -> None:
         assert runtime.inbound_adapters[0].is_running() is True
 
         runtime.request_shutdown()
-        
+
         # Run in thread with timeout to avoid hanging
         run_thread = threading.Thread(target=runtime.run, daemon=True)
         run_thread.start()
         run_thread.join(timeout=2.0)
-        
+
         # Should have exited quickly due to shutdown request
         assert not run_thread.is_alive() or runtime._shutdown_requested
     finally:
@@ -192,7 +191,7 @@ def test_runtime_with_config_file() -> None:
     validate_config(config_dict)
 
     # Create test handler
-    test_module = create_test_handler_module()
+    create_test_handler_module()
 
     # Create and start runtime
     runtime = Runtime(config_dict)

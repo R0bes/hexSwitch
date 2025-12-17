@@ -4,20 +4,20 @@ import logging
 import uuid
 from typing import Any
 
-from hexswitch.domain.services import BaseService
 from example1.domain.entities.example import ExampleEntity
 from example1.domain.ports.repositories.example_repository_port import ExampleRepositoryPort
+from hexswitch.domain.services import BaseService
 
 logger = logging.getLogger(__name__)
 
 
 class ExampleService(BaseService[ExampleEntity, ExampleRepositoryPort]):
     """Service for example entity management.
-    
+
     Inherits from BaseService which provides:
     - get_by_id(), list_all(), delete()
     - exists(), count()
-    
+
     Adds domain-specific business logic here.
     """
 

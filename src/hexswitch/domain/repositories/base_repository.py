@@ -1,17 +1,17 @@
 """Base repository port and implementation for hexagonal architecture."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Optional, List, Any, Dict
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 T = TypeVar('T')
 
 
 class BaseRepositoryPort(ABC, Generic[T]):
     """Abstract port interface for repository operations.
-    
+
     This is the port (interface) that should be defined in the domain layer.
     Services depend on this port, not on concrete implementations.
-    
+
     Example:
         class ExampleRepositoryPort(BaseRepositoryPort[ExampleEntity]):
             @abstractmethod
@@ -67,17 +67,17 @@ class BaseRepositoryPort(ABC, Generic[T]):
 
 class BaseRepository(BaseRepositoryPort[T], Generic[T]):
     """Base repository implementation with common CRUD operations.
-    
+
     This provides a foundation for concrete repository implementations.
     Subclasses can override methods or add domain-specific methods.
-    
+
     Example:
         class ExampleRepository(BaseRepository[ExampleEntity]):
             def find_by_name(self, name: str) -> Optional[ExampleEntity]:
                 # Custom implementation
                 return next((e for e in self._storage.values() if e.name == name), None)
     """
-    
+
     def __init__(self) -> None:
         """Initialize repository with empty storage."""
         self._storage: Dict[str, T] = {}
@@ -95,7 +95,7 @@ class BaseRepository(BaseRepositoryPort[T], Generic[T]):
         entity_id = getattr(entity, 'id', None)
         if entity_id is None:
             raise ValueError("Entity must have an 'id' attribute")
-        
+
         self._storage[entity_id] = entity
         return entity
 
@@ -153,16 +153,16 @@ class BaseRepository(BaseRepositoryPort[T], Generic[T]):
 
     def from_dict(self, data: Dict[str, Any]) -> T:
         """Create entity from dictionary.
-        
+
         This is a helper method that subclasses should override
         to create domain entities from dictionaries.
-        
+
         Args:
             data: Dictionary containing entity data.
-            
+
         Returns:
             Created entity.
-            
+
         Raises:
             NotImplementedError: If not overridden by subclass.
         """

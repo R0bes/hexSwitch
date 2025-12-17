@@ -1,16 +1,14 @@
 """Comprehensive adapter testing utility with security focus."""
 
-import asyncio
 import logging
 import socket
-import threading
 import time
 from typing import Any, Callable
 
 import pytest
 
-from hexswitch.adapters.exceptions import AdapterConnectionError, AdapterStartError, AdapterStopError
 from hexswitch.adapters.base import InboundAdapter, OutboundAdapter
+from hexswitch.adapters.exceptions import AdapterConnectionError
 
 logger = logging.getLogger(__name__)
 

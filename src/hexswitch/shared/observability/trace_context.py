@@ -12,11 +12,10 @@ Supports multiple trace context formats:
 import uuid
 from typing import Any
 
-from opentelemetry import trace, propagate
+from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from hexswitch.shared.observability.tracing import Span, get_current_span
-
 
 # Standard trace context header names
 W3C_TRACEPARENT = "traceparent"
@@ -32,15 +31,15 @@ HEXSWITCH_PARENT_SPAN_ID = "X-Parent-Span-Id"
 
 def extract_trace_context_from_headers(headers: dict[str, str]) -> dict[str, str | None]:
     """Extract trace context from HTTP headers using OpenTelemetry.
-    
+
     Supports multiple formats:
     - W3C Trace Context (traceparent) - via OpenTelemetry
     - B3 (X-B3-*) - manual fallback
     - HexSwitch (X-Trace-Id, X-Span-Id, X-Parent-Span-Id) - manual fallback
-    
+
     Args:
         headers: HTTP headers dictionary.
-        
+
     Returns:
         Dictionary with trace_id, span_id, parent_span_id (or None if not found).
     """
@@ -49,7 +48,7 @@ def extract_trace_context_from_headers(headers: dict[str, str]) -> dict[str, str
     try:
         context = propagator.extract(carrier=headers)
         span_context = trace.get_current_span(context).get_span_context()
-        
+
         if span_context.is_valid:
             return {
                 "trace_id": format(span_context.trace_id, "032x"),
@@ -58,7 +57,7 @@ def extract_trace_context_from_headers(headers: dict[str, str]) -> dict[str, str
             }
     except Exception:
         pass  # Fall through to manual parsing
-    
+
     # Try B3 format (manual parsing)
     if B3_TRACE_ID in headers:
         return {
@@ -66,7 +65,7 @@ def extract_trace_context_from_headers(headers: dict[str, str]) -> dict[str, str
             "span_id": headers.get(B3_SPAN_ID),
             "parent_span_id": headers.get(B3_PARENT_SPAN_ID),
         }
-    
+
     # Try HexSwitch format (fallback)
     if HEXSWITCH_TRACE_ID in headers:
         return {
@@ -74,7 +73,7 @@ def extract_trace_context_from_headers(headers: dict[str, str]) -> dict[str, str
             "span_id": headers.get(HEXSWITCH_SPAN_ID),
             "parent_span_id": headers.get(HEXSWITCH_PARENT_SPAN_ID),
         }
-    
+
     return {
         "trace_id": None,
         "span_id": None,
@@ -90,14 +89,14 @@ def inject_trace_context_to_headers(
     header_format: str = "w3c",  # "w3c", "b3", or "hexswitch"
 ) -> dict[str, str]:
     """Inject trace context into HTTP headers using OpenTelemetry.
-    
+
     Args:
         headers: HTTP headers dictionary (will be modified).
         trace_id: Trace ID.
         span_id: Current span ID.
         parent_span_id: Parent span ID.
         header_format: Header format ("w3c", "b3", or "hexswitch").
-        
+
     Returns:
         Updated headers dictionary.
     """
@@ -110,11 +109,11 @@ def inject_trace_context_to_headers(
         except Exception:
             # Fallback to manual if OpenTelemetry context not available
             pass
-    
+
     # Manual injection for B3 or HexSwitch format
     if not trace_id:
         return headers
-    
+
     if header_format == "b3":
         # B3 format
         headers[B3_TRACE_ID] = trace_id
@@ -130,29 +129,29 @@ def inject_trace_context_to_headers(
             headers[HEXSWITCH_SPAN_ID] = span_id
         if parent_span_id:
             headers[HEXSWITCH_PARENT_SPAN_ID] = parent_span_id
-    
+
     return headers
 
 
 def extract_trace_context_from_grpc_metadata(metadata: dict[str, Any]) -> dict[str, str | None]:
     """Extract trace context from gRPC metadata using OpenTelemetry.
-    
+
     Args:
         metadata: gRPC metadata dictionary.
-        
+
     Returns:
         Dictionary with trace_id, span_id, parent_span_id (or None if not found).
     """
     # gRPC metadata is typically a list of tuples, but we handle dict format too
     if isinstance(metadata, dict):
         return extract_trace_context_from_headers(metadata)
-    
+
     # Convert list of tuples to dict
     headers = {}
     if isinstance(metadata, list):
         for key, value in metadata:
             headers[key.lower()] = str(value)
-    
+
     return extract_trace_context_from_headers(headers)
 
 
@@ -163,28 +162,28 @@ def inject_trace_context_to_grpc_metadata(
     parent_span_id: str | None = None,
 ) -> list[tuple[str, str]]:
     """Inject trace context into gRPC metadata using OpenTelemetry.
-    
+
     Args:
         metadata: gRPC metadata list of tuples (will be modified).
         trace_id: Trace ID.
         span_id: Current span ID.
         parent_span_id: Parent span ID.
-        
+
     Returns:
         Updated metadata list.
     """
     # Convert to dict for propagation
-    headers = {k: v for k, v in metadata}
-    
+    headers = dict(metadata)
+
     # Try OpenTelemetry propagation first
     try:
         propagator = TraceContextTextMapPropagator()
         propagator.inject(carrier=headers)
         # Convert back to list
-        return [(k, v) for k, v in headers.items()]
+        return list(headers.items())
     except Exception:
         pass
-    
+
     # Fallback to HexSwitch format for gRPC
     if trace_id:
         headers[HEXSWITCH_TRACE_ID.lower()] = trace_id
@@ -192,13 +191,13 @@ def inject_trace_context_to_grpc_metadata(
             headers[HEXSWITCH_SPAN_ID.lower()] = span_id
         if parent_span_id:
             headers[HEXSWITCH_PARENT_SPAN_ID.lower()] = parent_span_id
-    
-    return [(k, v) for k, v in headers.items()]
+
+    return list(headers.items())
 
 
 def get_trace_context_from_current_span() -> dict[str, str | None]:
     """Get trace context from current span using OpenTelemetry.
-    
+
     Returns:
         Dictionary with trace_id, span_id, parent_span_id (or None if no current span).
     """
@@ -209,7 +208,7 @@ def get_trace_context_from_current_span() -> dict[str, str | None]:
             "span_id": None,
             "parent_span_id": None,
         }
-    
+
     return {
         "trace_id": current_span.trace_id,
         "span_id": current_span.span_id,
@@ -222,11 +221,11 @@ def create_trace_context(
     parent_span: Span | None = None,
 ) -> dict[str, str | None]:
     """Create new trace context.
-    
+
     Args:
         trace_id: Trace ID (uses parent's trace_id if parent_span provided).
         parent_span: Parent span (for creating child span context).
-        
+
     Returns:
         Dictionary with trace_id, span_id, parent_span_id.
     """
@@ -236,9 +235,9 @@ def create_trace_context(
     else:
         trace_id = trace_id or str(uuid.uuid4())
         parent_span_id = None
-    
+
     span_id = str(uuid.uuid4())
-    
+
     return {
         "trace_id": trace_id,
         "span_id": span_id,

@@ -2,8 +2,8 @@
 
 import pytest
 
+from hexswitch.ports import PortNotFoundError, PortRegistry, get_port_registry
 from hexswitch.shared.envelope import Envelope
-from hexswitch.ports import PortRegistry, get_port_registry, PortNotFoundError
 
 
 def test_port_registry_register():
@@ -15,7 +15,7 @@ def test_port_registry_register():
 
     registry.register_handler("test_port", handler)
     assert registry.has_port("test_port")
-    
+
     port = registry.get_port("test_port")
     assert len(port.handlers) == 1
     assert port.handlers[0] == handler
@@ -33,7 +33,7 @@ def test_port_registry_multiple_handlers():
 
     registry.register_handler("test_port", handler1)
     registry.register_handler("test_port", handler2)  # Should not raise error
-    
+
     port = registry.get_port("test_port")
     assert len(port.handlers) == 2
     assert handler1 in port.handlers
@@ -74,10 +74,10 @@ def test_port_registry_route():
         return Envelope.success({"result": "ok"})
 
     registry.register_handler("test_port", handler)
-    
+
     envelope = Envelope(path="/test")
     results = registry.route("test_port", envelope)
-    
+
     assert len(results) == 1
     assert results[0].status_code == 200
     assert results[0].data == {"result": "ok"}

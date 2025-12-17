@@ -12,8 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 try:
-    from hexswitch.runtime import Runtime
     from hexswitch.config import load_config, validate_config
+    from hexswitch.runtime import Runtime
 except ImportError as e:
     print(f"Error importing hexswitch: {e}", file=sys.stderr)
     print("Make sure hexSwitch is installed: pip install -e .", file=sys.stderr)
@@ -22,10 +22,10 @@ except ImportError as e:
 
 def get_adapter_metadata():
     """Extract adapter metadata from hexSwitch implementation."""
-    
+
     # Real adapters from runtime.py
     adapters = []
-    
+
     # Inbound adapters
     adapters.append({
         "id": "http",
@@ -53,7 +53,7 @@ def get_adapter_metadata():
             }
         }
     })
-    
+
     # Outbound adapters
     adapters.append({
         "id": "http_client",
@@ -70,7 +70,7 @@ def get_adapter_metadata():
             "headers": {"type": "object", "required": False}
         }
     })
-    
+
     adapters.append({
         "id": "mcp_client",
         "name": "MCP Client",
@@ -86,7 +86,7 @@ def get_adapter_metadata():
             "headers": {"type": "object", "required": False}
         }
     })
-    
+
     return adapters
 
 

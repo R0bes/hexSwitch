@@ -17,20 +17,20 @@ def get_current_version(pyproject_path: Path) -> str:
 
 def bump_version(version: str, bump_type: str = "patch") -> str:
     """Bump version string.
-    
+
     Args:
         version: Current version (e.g., "0.1.0")
         bump_type: Type of bump - "major", "minor", or "patch"
-    
+
     Returns:
         New version string
     """
     parts = version.split(".")
     if len(parts) != 3:
         raise ValueError(f"Invalid version format: {version}")
-    
+
     major, minor, patch = map(int, parts)
-    
+
     if bump_type == "major":
         major += 1
         minor = 0
@@ -42,7 +42,7 @@ def bump_version(version: str, bump_type: str = "patch") -> str:
         patch += 1
     else:
         raise ValueError(f"Invalid bump_type: {bump_type}. Must be 'major', 'minor', or 'patch'")
-    
+
     return f"{major}.{minor}.{patch}"
 
 
@@ -62,7 +62,7 @@ def update_version(pyproject_path: Path, new_version: str) -> None:
 def main() -> int:
     """Main function."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Bump version in pyproject.toml")
     parser.add_argument(
         "--type",
@@ -75,27 +75,27 @@ def main() -> int:
         action="store_true",
         help="Show what would be changed without making changes"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Find pyproject.toml
     script_dir = Path(__file__).parent.parent
     pyproject_path = script_dir / "pyproject.toml"
-    
+
     if not pyproject_path.exists():
         print(f"Error: {pyproject_path} not found", file=sys.stderr)
         return 1
-    
+
     try:
         current_version = get_current_version(pyproject_path)
         new_version = bump_version(current_version, args.type)
-        
+
         if args.dry_run:
             print(f"Current version: {current_version}")
             print(f"New version: {new_version}")
             print(f"Bump type: {args.type}")
             return 0
-        
+
         update_version(pyproject_path, new_version)
         print(f"Version bumped from {current_version} to {new_version}")
         # Output for GitHub Actions
@@ -104,7 +104,7 @@ def main() -> int:
         # Also print to stdout for easy parsing
         print(f"NEW_VERSION={new_version}")
         return 0
-        
+
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1

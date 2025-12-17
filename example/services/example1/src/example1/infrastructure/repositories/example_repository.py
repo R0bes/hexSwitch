@@ -3,20 +3,20 @@
 import logging
 from typing import Any
 
-from hexswitch.domain.repositories import BaseRepository
 from example1.domain.entities.example import ExampleEntity
 from example1.domain.ports.repositories.example_repository_port import ExampleRepositoryPort
+from hexswitch.domain.repositories import BaseRepository
 
 logger = logging.getLogger(__name__)
 
 
 class ExampleRepository(BaseRepository[ExampleEntity], ExampleRepositoryPort):
     """In-memory implementation of example repository.
-    
+
     Inherits from BaseRepository which provides:
     - save(), find_by_id(), list_all(), delete()
     - count(), exists()
-    
+
     Can add domain-specific methods here if needed.
     """
 

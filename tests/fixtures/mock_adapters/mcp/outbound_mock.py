@@ -21,7 +21,7 @@ class MockMcpAdapterClient(OutboundAdapter):
         self.config = config
         self._connected = False
         self.server_url = config.get("server_url", "https://mcp.example.com")
-        
+
         # Create internal mock HTTP client adapter
         http_config = {
             "base_url": self.server_url,

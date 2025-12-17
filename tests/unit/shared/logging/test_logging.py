@@ -4,7 +4,6 @@ import io
 import json
 import logging
 import sys
-from unittest.mock import patch
 
 import pytest
 

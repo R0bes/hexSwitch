@@ -1,16 +1,15 @@
 """Unit tests for port decorator."""
 
-import pytest
 
-from hexswitch.shared.envelope import Envelope
 from hexswitch.ports import get_port_registry, port, reset_port_registry
+from hexswitch.shared.envelope import Envelope
 
 
 def test_port_decorator_registers():
     """Test that @port decorator registers function."""
     reset_port_registry()
     registry = get_port_registry()
-    
+
     # Use unique name to avoid conflicts
     port_name = f"test_port_unique_{id(registry)}"
 
@@ -42,7 +41,7 @@ def test_port_decorator_multiple_handlers():
     """Test that multiple handlers can bind to the same port."""
     reset_port_registry()
     registry = get_port_registry()
-    
+
     @port(name="shared_port")
     def handler1(envelope: Envelope) -> Envelope:
         return Envelope.success({"result": "ok"})
@@ -51,7 +50,7 @@ def test_port_decorator_multiple_handlers():
     @port(name="shared_port")
     def handler2(envelope: Envelope) -> Envelope:
         return Envelope.success({"result": "ok2"})
-    
+
     # Both handlers should be bound to the port
     port_obj = registry.get_port("shared_port")
     assert len(port_obj.handlers) == 2

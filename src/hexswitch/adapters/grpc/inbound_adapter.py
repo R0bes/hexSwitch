@@ -14,12 +14,11 @@ from typing import Any
 import grpc
 from grpc import server as grpc_server
 
-from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError
-from hexswitch.adapters.grpc._Grpc_Envelope import GrpcEnvelope
 from hexswitch.adapters.base import InboundAdapter
-from hexswitch.shared.envelope import Envelope
-from hexswitch.adapters.exceptions import HandlerError
+from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
+from hexswitch.adapters.grpc._Grpc_Envelope import GrpcEnvelope
 from hexswitch.ports import PortError, get_port_registry
+from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 
@@ -113,20 +112,20 @@ class GrpcServiceHandler:
                         service_name=self.service_name,
                         method_name=method_name,
                     )
-                    
+
                     # Call handler/port with Envelope
                     response_envelope = handler(request_envelope)
-                    
+
                     # Convert Envelope (Response) → gRPC Response
                     # If response is an error, set gRPC status
                     if response_envelope.error_message:
                         context.set_code(grpc.StatusCode.INTERNAL)
                         context.set_details(response_envelope.error_message)
                         raise grpc.RpcError(f"Handler error: {response_envelope.error_message}")
-                    
+
                     # Convert response data using converter
                     return self._converter.envelope_to_response(response_envelope)
-                    
+
                 except grpc.RpcError:
                     raise
                 except Exception as e:
@@ -241,7 +240,7 @@ class GrpcAdapterServer(InboundAdapter):
                 handler_map = self._handler_map.get(service_name, {})
 
                 # Create service handler with converter
-                service_handler = GrpcServiceHandler(service_config, handler_map, self._converter)
+                GrpcServiceHandler(service_config, handler_map, self._converter)
 
                 # Try to dynamically add service to server
                 # This is a simplified approach - in production, you'd load the actual
@@ -296,7 +295,7 @@ class GrpcAdapterServer(InboundAdapter):
             logger.info(f"gRPC adapter '{self.name}' stopped")
         except Exception as e:
             raise AdapterStopError(f"Failed to stop gRPC adapter '{self.name}': {e}") from e
-    
+
     def to_envelope(
         self,
         request: Any,
@@ -305,24 +304,24 @@ class GrpcAdapterServer(InboundAdapter):
         method_name: str,
     ) -> Envelope:
         """Convert gRPC request to Envelope.
-        
+
         Args:
             request: gRPC request object.
             context: gRPC context.
             service_name: Service name.
             method_name: Method name.
-            
+
         Returns:
             Request envelope.
         """
         return self._converter.request_to_envelope(request, context, service_name, method_name)
-    
+
     def from_envelope(self, envelope: Envelope) -> dict[str, Any]:
         """Convert Envelope response to gRPC response.
-        
+
         Args:
             envelope: Response envelope.
-            
+
         Returns:
             Response data dictionary.
         """

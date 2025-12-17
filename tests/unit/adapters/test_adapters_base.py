@@ -1,10 +1,10 @@
 """Unit tests for adapter interfaces."""
 
+from typing import Any
+
 import pytest
 
 from hexswitch.adapters.base import InboundAdapter, OutboundAdapter
-from typing import Any
-
 from hexswitch.shared.envelope import Envelope
 
 

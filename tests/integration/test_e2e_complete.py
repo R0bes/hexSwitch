@@ -7,10 +7,9 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-from hexswitch.shared.config import load_config, validate_config
+from hexswitch.runtime import Runtime
+from hexswitch.shared.config import validate_config
 from hexswitch.shared.envelope import Envelope
-from hexswitch.runtime import Runtime, run_runtime
-
 
 # Timeout for E2E tests that start runtime (in seconds)
 E2E_TEST_TIMEOUT = 25

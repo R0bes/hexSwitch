@@ -3,9 +3,9 @@
 import json
 import logging
 
-from hexswitch.shared.envelope import Envelope
-
 from example_service.application.services.example_service import get_example_service
+
+from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +25,7 @@ def websocket_connection_handler(connection_data: dict) -> None:
     if websocket:
         try:
             # Send welcome message
-            welcome_message = {
-                "type": "welcome",
-                "message": "Connected to example service",
-                "path": path,
-            }
+            pass
             # Note: WebSocket adapter handles the actual sending
             # This is just for demonstration
         except Exception as e:

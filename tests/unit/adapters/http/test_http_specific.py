@@ -18,12 +18,12 @@ from tests.unit.adapters.base.security_test_base import SecurityTestBase
 
 def wait_for_server_ready(port: int, max_attempts: int = 20, timeout: float = 0.1) -> None:
     """Wait for HTTP server to be ready on the specified port.
-    
+
     Args:
         port: Port number to check.
         max_attempts: Maximum number of connection attempts.
         timeout: Timeout for each connection attempt.
-        
+
     Raises:
         AssertionError: If server does not become ready within max_attempts.
     """
@@ -42,7 +42,7 @@ def wait_for_server_ready(port: int, max_attempts: int = 20, timeout: float = 0.
 
 def cleanup_adapter(adapter, module_name: str | None = None) -> None:
     """Cleanup adapter and test module safely.
-    
+
     Args:
         adapter: Adapter instance to stop.
         module_name: Optional module name to remove from sys.modules.
@@ -54,7 +54,7 @@ def cleanup_adapter(adapter, module_name: str | None = None) -> None:
         time.sleep(0.5)  # Give server time to shut down gracefully
     except Exception:
         pass  # Ignore errors during cleanup
-    
+
     if module_name and module_name in sys.modules:
         del sys.modules[module_name]
 
@@ -318,7 +318,7 @@ class TestHttpAdapterSecurity(SecurityTestBase):
             req = Request(url, data=b"test", method="POST")
             req.add_header("Content-Length", "-1")
             try:
-                with urlopen(req, timeout=5) as response:
+                with urlopen(req, timeout=5):
                     # Should handle gracefully
                     pass
             except Exception:
@@ -356,7 +356,7 @@ class TestHttpAdapterSecurity(SecurityTestBase):
             req.add_header("Content-Type", "application/json")
 
             try:
-                with urlopen(req, timeout=5) as response:
+                with urlopen(req, timeout=5):
                     # Should handle or reject gracefully
                     pass
             except Exception:

@@ -1,8 +1,6 @@
 """Tests for outbound port binding in Runtime."""
 
-import pytest
 
-from hexswitch.shared.envelope import Envelope
 from hexswitch.ports import get_port_registry, reset_port_registry
 from hexswitch.runtime import Runtime
 
@@ -27,23 +25,23 @@ class TestRuntimeOutboundPortBinding:
                 }
             },
         }
-        
+
         runtime = Runtime(config)
-        
+
         try:
             runtime.start()
-            
+
             # Verify port is registered
             registry = get_port_registry()
             assert registry.has_port("external_api")
-            
+
             # Verify port has handler
             port = registry.get_port("external_api")
             assert len(port.handlers) == 1
-            
+
         finally:
             runtime.stop()
-    
+
     def test_runtime_binds_multiple_ports_to_adapter(self) -> None:
         """Test that Runtime can bind multiple ports to one adapter."""
         config = {
@@ -57,19 +55,19 @@ class TestRuntimeOutboundPortBinding:
                 }
             },
         }
-        
+
         runtime = Runtime(config)
-        
+
         try:
             runtime.start()
-            
+
             registry = get_port_registry()
             assert registry.has_port("api_v1")
             assert registry.has_port("api_v2")
-            
+
         finally:
             runtime.stop()
-    
+
     def test_runtime_binds_single_port_string(self) -> None:
         """Test that Runtime can bind single port as string."""
         config = {
@@ -83,18 +81,18 @@ class TestRuntimeOutboundPortBinding:
                 }
             },
         }
-        
+
         runtime = Runtime(config)
-        
+
         try:
             runtime.start()
-            
+
             registry = get_port_registry()
             assert registry.has_port("single_port")
-            
+
         finally:
             runtime.stop()
-    
+
     def test_runtime_handles_missing_ports_config(self) -> None:
         """Test that Runtime handles missing ports config gracefully."""
         config = {
@@ -108,16 +106,16 @@ class TestRuntimeOutboundPortBinding:
                 }
             },
         }
-        
+
         runtime = Runtime(config)
-        
+
         try:
             # Should not raise error
             runtime.start()
-            
+
             # Adapter should still be started
             assert len(runtime.outbound_adapters) == 1
-            
+
         finally:
             runtime.stop()
 

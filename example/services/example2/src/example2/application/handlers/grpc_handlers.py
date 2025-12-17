@@ -2,9 +2,9 @@
 
 import logging
 
-from hexswitch.shared.envelope import Envelope
-
 from example2_service.application.services.example2_service import get_example2_service
+
+from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 
@@ -175,32 +175,32 @@ def grpc_delete_example_handler(envelope: Envelope) -> Envelope:
 
 def call_example1_handler(envelope: Envelope) -> Envelope:
     """Call example1 service via HTTP.
-    
+
     Args:
         envelope: Request envelope with body containing path and data.
-        
+
     Returns:
         Response envelope from example1.
     """
     try:
         from hexswitch.ports import get_port_registry
-        
+
         body = envelope.body or {}
         path = body.get("path", "/api/examples")
         method = body.get("method", "GET")
         data = body.get("data", {})
-        
+
         # Create envelope for HTTP call
         http_envelope = Envelope(
             path=path,
             method=method,
             body=data
         )
-        
+
         # Route through HTTP client port
         registry = get_port_registry()
         results = registry.route("example1_http_port", http_envelope)
-        
+
         if results:
             return results[0]
         else:
@@ -212,30 +212,30 @@ def call_example1_handler(envelope: Envelope) -> Envelope:
 
 def call_example3_handler(envelope: Envelope) -> Envelope:
     """Call example3 service via WebSocket.
-    
+
     Args:
         envelope: Request envelope with body containing message.
-        
+
     Returns:
         Response envelope from example3.
     """
     try:
         from hexswitch.ports import get_port_registry
-        
+
         body = envelope.body or {}
         message = body.get("message", "ping")
-        
+
         # Create envelope for WebSocket call
         ws_envelope = Envelope(
             path="/ws",
             method="POST",
             body={"message": message}
         )
-        
+
         # Route through WebSocket client port
         registry = get_port_registry()
         results = registry.route("example3_ws_port", ws_envelope)
-        
+
         if results:
             return results[0]
         else:

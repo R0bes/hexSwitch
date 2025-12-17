@@ -2,10 +2,10 @@
 
 from typing import Any, Callable
 
-from hexswitch.adapters.grpc import GrpcAdapterServer, GrpcAdapterClient
-from hexswitch.adapters.http import HttpAdapterServer, HttpAdapterClient
+from hexswitch.adapters.grpc import GrpcAdapterClient, GrpcAdapterServer
+from hexswitch.adapters.http import HttpAdapterClient, HttpAdapterServer
 from hexswitch.adapters.mcp import McpAdapterClient
-from hexswitch.adapters.websocket import WebSocketAdapterServer, WebSocketAdapterClient
+from hexswitch.adapters.websocket import WebSocketAdapterClient, WebSocketAdapterServer
 
 # Type alias for adapter test data tuple
 # Format: (adapter_name, adapter_class, config_factory, expected_attrs)

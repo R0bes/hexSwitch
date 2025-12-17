@@ -1,10 +1,8 @@
 """Tests for Envelope-based adapter conversions."""
 
-import json
-import pytest
 
+from hexswitch.adapters.http import HttpAdapterClient, HttpAdapterServer
 from hexswitch.shared.envelope import Envelope
-from hexswitch.adapters.http import HttpAdapterServer, HttpAdapterClient
 
 
 class TestHttpAdapterEnvelope:
@@ -23,21 +21,21 @@ class TestHttpAdapterEnvelope:
                 }
             ],
         }
-        
-        adapter = HttpAdapterServer("http", config)
-        
+
+        HttpAdapterServer("http", config)
+
         # Mock handler that checks Envelope
         def test_handler(envelope: Envelope) -> Envelope:
             assert envelope.path == "/test"
             assert envelope.method == "POST"
             assert envelope.body == {"key": "value"}
             return Envelope.success({"status": "ok"})
-        
+
         # Register handler
         from hexswitch.ports import get_port_registry
         registry = get_port_registry()
         registry.register_handler("test_port", test_handler)
-        
+
         # Test would require actual HTTP server, so we'll test the conversion logic separately
         # This is a placeholder test structure
 
@@ -51,17 +49,17 @@ class TestHttpClientAdapterEnvelope:
             "base_url": "https://api.example.com",
             "timeout": 30,
         }
-        
-        adapter = HttpAdapterClient("http_client", config)
-        
+
+        HttpAdapterClient("http_client", config)
+
         # Create Envelope
-        envelope = Envelope(
+        Envelope(
             path="/users",
             method="POST",
             body={"name": "John"},
             headers={"Authorization": "Bearer token"},
         )
-        
+
         # Note: This test requires the adapter to be connected
         # We'll test the conversion logic separately
 
@@ -79,18 +77,18 @@ class TestEnvelopeConversion:
                 "trace_id": "trace_123",
             },
         )
-        
+
         assert envelope.metadata["session_id"] == "session_123"
         assert envelope.metadata["cookies"] == {"session": "abc"}
         assert envelope.metadata["trace_id"] == "trace_123"
-    
+
     def test_envelope_success_factory(self) -> None:
         """Test Envelope.success() factory method."""
         envelope = Envelope.success({"order_id": "123"})
         assert envelope.status_code == 200
         assert envelope.data == {"order_id": "123"}
         assert envelope.error_message is None
-    
+
     def test_envelope_error_factory(self) -> None:
         """Test Envelope.error() factory method."""
         envelope = Envelope.error(404, "Not found")

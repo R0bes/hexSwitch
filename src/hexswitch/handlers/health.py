@@ -1,7 +1,8 @@
 """Default health check handlers."""
 
-import time
 import os
+import time
+
 from hexswitch.ports import port
 from hexswitch.shared.envelope import Envelope
 

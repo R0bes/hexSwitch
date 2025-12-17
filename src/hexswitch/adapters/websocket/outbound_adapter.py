@@ -8,8 +8,8 @@ from typing import Any
 
 import websockets
 
-from hexswitch.adapters.exceptions import AdapterConnectionError
 from hexswitch.adapters.base import OutboundAdapter
+from hexswitch.adapters.exceptions import AdapterConnectionError
 from hexswitch.adapters.websocket._WebSocket_Envelope import WebSocketEnvelope
 from hexswitch.shared.envelope import Envelope
 
@@ -157,58 +157,58 @@ class WebSocketAdapterClient(OutboundAdapter):
 
     def from_envelope(self, envelope: Envelope) -> str:
         """Convert Envelope request to WebSocket message.
-        
+
         Args:
             envelope: Request envelope.
-            
+
         Returns:
             WebSocket message as JSON string.
         """
         return self._converter.envelope_to_request(envelope)
-    
+
     def to_envelope(
         self,
         message: str | bytes,
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert WebSocket response message to Envelope.
-        
+
         Args:
             message: WebSocket message (string or bytes).
             original_envelope: Original request envelope.
-            
+
         Returns:
             Response envelope.
         """
         return self._converter.message_to_envelope_response(message, original_envelope)
-    
+
     def request(self, envelope: Envelope) -> Envelope:
         """Make WebSocket request using Envelope.
-        
+
         Converts Envelope → WebSocket Message → WebSocket Message → Envelope.
-        
+
         Args:
             envelope: Request envelope with path, body, etc.
-            
+
         Returns:
             Response envelope.
-            
+
         Raises:
             RuntimeError: If adapter is not connected.
         """
         if not self._connected or not self.websocket or not self._loop:
             raise RuntimeError(f"WebSocket client adapter '{self.name}' is not connected")
-        
+
         # Convert Envelope → WebSocket Message using converter
         message = self.from_envelope(envelope)
-        
+
         try:
             # Send message
             future = asyncio.run_coroutine_threadsafe(
                 self._send_async(message), self._loop
             )
             future.result(timeout=self.timeout)
-            
+
             # Wait for response (with timeout)
             import time
             start_time = time.time()
@@ -224,13 +224,13 @@ class WebSocketAdapterClient(OutboundAdapter):
                 except asyncio.QueueEmpty:
                     time.sleep(0.1)
                     continue
-            
+
             # Timeout
             return Envelope.error(504, "WebSocket request timeout")
         except Exception as e:
             logger.error(f"WebSocket request failed: {e}")
             return Envelope.error(500, str(e))
-    
+
     async def _send_async(self, message: Any) -> None:
         """Send message asynchronously.
 

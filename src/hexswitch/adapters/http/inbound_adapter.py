@@ -8,12 +8,11 @@ from threading import Thread
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError
-from hexswitch.adapters.http._Http_Envelope import HttpEnvelope
 from hexswitch.adapters.base import InboundAdapter
-from hexswitch.shared.envelope import Envelope
-from hexswitch.adapters.exceptions import HandlerError
+from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
+from hexswitch.adapters.http._Http_Envelope import HttpEnvelope
 from hexswitch.ports import PortError, get_port_registry
+from hexswitch.shared.envelope import Envelope
 from hexswitch.shared.helpers import parse_path_params
 
 logger = logging.getLogger(__name__)
@@ -134,7 +133,7 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
                 if not callable(handler):
                     raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
             else:
-                logger.error(f"Route must have either 'handler' or 'port' specified")
+                logger.error("Route must have either 'handler' or 'port' specified")
                 self._send_response(500, {"error": "Internal Server Error", "message": "Route configuration error"})
                 return
         except (HandlerError, PortError) as e:
@@ -145,10 +144,10 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
         # Convert HTTP Request → Envelope (Request) using converter
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length) if content_length > 0 else b""
-        
+
         # Extract path parameters
         path_params = parse_path_params(request_path, route["path"])
-        
+
         # Parse query parameters (convert from parse_qs format)
         normalized_query_params: dict[str, Any] = {}
         for key, value in query_params.items():
@@ -156,7 +155,7 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
                 normalized_query_params[key] = value[0] if len(value) == 1 else value
             else:
                 normalized_query_params[key] = value
-        
+
         # Use converter to create Envelope
         request_envelope = self._adapter.to_envelope(
             method=method,
@@ -173,32 +172,32 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
         except Exception as e:
             logger.exception(f"Handler/Port raised exception: {e}")
             response_envelope = Envelope.error(500, "Internal Server Error")
-        
+
         # Convert Envelope (Response) → HTTP Response using converter
         self._send_envelope_response(response_envelope)
 
     def _send_envelope_response(self, envelope: Envelope) -> None:
         """Send Envelope as HTTP response.
-        
+
         Args:
             envelope: Response envelope.
         """
         # Use converter to convert Envelope to HTTP response
         status_code, data, headers = self._adapter.from_envelope(envelope)
-        
+
         # Send response with headers
         response_body = json.dumps(data).encode("utf-8")
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(response_body)))
-        
+
         # Add headers from converter
         for header_name, header_value in headers.items():
             self.send_header(header_name, header_value)
-        
+
         self.end_headers()
         self.wfile.write(response_body)
-    
+
     def _send_response(self, status_code: int, data: dict[str, Any]) -> None:
         """Send JSON response.
 
@@ -282,7 +281,7 @@ class HttpAdapterServer(InboundAdapter):
             logger.info(f"HTTP adapter '{self.name}' stopped")
         except Exception as e:
             raise AdapterStopError(f"Failed to stop HTTP adapter '{self.name}': {e}") from e
-    
+
     def to_envelope(
         self,
         method: str,
@@ -293,7 +292,7 @@ class HttpAdapterServer(InboundAdapter):
         path_params: dict[str, str] | None = None,
     ) -> Envelope:
         """Convert HTTP request to Envelope.
-        
+
         Args:
             method: HTTP method.
             path: Request path.
@@ -301,7 +300,7 @@ class HttpAdapterServer(InboundAdapter):
             query_params: Query parameters.
             body: Request body as bytes.
             path_params: Path parameters.
-            
+
         Returns:
             Request envelope.
         """
@@ -313,13 +312,13 @@ class HttpAdapterServer(InboundAdapter):
             body=body,
             path_params=path_params,
         )
-    
+
     def from_envelope(self, envelope: Envelope) -> tuple[int, dict[str, Any], dict[str, str]]:
         """Convert Envelope response to HTTP response.
-        
+
         Args:
             envelope: Response envelope.
-            
+
         Returns:
             Tuple of (status_code, data, headers).
         """

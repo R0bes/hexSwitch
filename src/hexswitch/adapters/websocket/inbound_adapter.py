@@ -11,12 +11,11 @@ from typing import Any
 import websockets
 from websockets.server import WebSocketServerProtocol, serve
 
-from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError
 from hexswitch.adapters.base import InboundAdapter
+from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
 from hexswitch.adapters.websocket._WebSocket_Envelope import WebSocketEnvelope
-from hexswitch.shared.envelope import Envelope
-from hexswitch.adapters.exceptions import HandlerError
 from hexswitch.ports import PortError, get_port_registry
+from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 
@@ -269,7 +268,7 @@ class WebSocketAdapterServer(InboundAdapter):
             logger.info(f"WebSocket adapter '{self.name}' stopped")
         except Exception as e:
             raise AdapterStopError(f"Failed to stop WebSocket adapter '{self.name}': {e}") from e
-    
+
     def to_envelope(
         self,
         message: str | bytes,
@@ -278,24 +277,24 @@ class WebSocketAdapterServer(InboundAdapter):
         websocket_id: int | None = None,
     ) -> Envelope:
         """Convert WebSocket message to Envelope.
-        
+
         Args:
             message: WebSocket message.
             path: WebSocket path.
             remote_address: Remote address.
             websocket_id: WebSocket connection ID.
-            
+
         Returns:
             Request envelope.
         """
         return self._converter.message_to_envelope(message, path, remote_address, websocket_id)
-    
+
     def from_envelope(self, envelope: Envelope) -> str:
         """Convert Envelope response to WebSocket message.
-        
+
         Args:
             envelope: Response envelope.
-            
+
         Returns:
             WebSocket message as JSON string.
         """

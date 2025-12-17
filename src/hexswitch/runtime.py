@@ -3,12 +3,12 @@
 import signal
 from typing import Any
 
-from hexswitch.adapters.exceptions import AdapterError
-from hexswitch.adapters.grpc import GrpcAdapterServer, GrpcAdapterClient
-from hexswitch.adapters.http import FastApiHttpAdapterServer, HttpAdapterClient
 from hexswitch.adapters.base import InboundAdapter, OutboundAdapter
-from hexswitch.adapters.mcp import McpAdapterServer, McpAdapterClient
-from hexswitch.adapters.websocket import WebSocketAdapterServer, WebSocketAdapterClient
+from hexswitch.adapters.exceptions import AdapterError
+from hexswitch.adapters.grpc import GrpcAdapterClient, GrpcAdapterServer
+from hexswitch.adapters.http import FastApiHttpAdapterServer, HttpAdapterClient
+from hexswitch.adapters.mcp import McpAdapterClient, McpAdapterServer
+from hexswitch.adapters.websocket import WebSocketAdapterClient, WebSocketAdapterServer
 from hexswitch.ports.registry import get_port_registry
 from hexswitch.shared.logging import get_logger
 from hexswitch.shared.observability import (
@@ -229,7 +229,7 @@ class Runtime:
             # Start inbound adapters
             for adapter_info in plan["inbound_adapters"]:
                 adapter_span = start_span(
-                    f"adapter.start",
+                    "adapter.start",
                     parent=span,
                     tags={"adapter": adapter_info["name"], "type": "inbound"},
                 )
@@ -259,7 +259,7 @@ class Runtime:
             port_registry = get_port_registry()
             for adapter_info in plan["outbound_adapters"]:
                 adapter_span = start_span(
-                    f"adapter.connect",
+                    "adapter.connect",
                     parent=span,
                     tags={"adapter": adapter_info["name"], "type": "outbound"},
                 )
@@ -270,13 +270,13 @@ class Runtime:
                     )
                     adapter.connect()
                     self.outbound_adapters.append(adapter)
-                    
+
                     # Bind adapter to outbound ports (if configured)
                     adapter_config = adapter_info["config"]
                     port_names = adapter_config.get("ports", [])
                     if isinstance(port_names, str):
                         port_names = [port_names]
-                    
+
                     for port_name in port_names:
                         try:
                             # Register handler that routes through the adapter
@@ -284,13 +284,13 @@ class Runtime:
                                 def handler(envelope):
                                     return adapter_instance.request(envelope)
                                 return handler
-                            
+
                             handler = create_adapter_handler(adapter)
                             port_registry.register_handler(port_name, handler)
                             logger.info(f"Bound outbound adapter '{adapter_info['name']}' to port '{port_name}'")
                         except Exception as e:
                             logger.warning(f"Failed to bind adapter to port '{port_name}': {e}")
-                    
+
                     duration = time.time() - start_time
                     self._adapter_start_duration.observe(duration)
                     self._adapter_start_counter.inc()

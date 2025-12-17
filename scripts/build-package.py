@@ -77,25 +77,25 @@ def run_command(cmd: list[str], description: str) -> bool:
 def check_prerequisites() -> bool:
     """Check if build tools are installed."""
     print_step("Checking prerequisites...")
-    
+
     # Check build module
     try:
-        subprocess.run([sys.executable, "-m", "build", "--version"], 
+        subprocess.run([sys.executable, "-m", "build", "--version"],
                       check=True, capture_output=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
         print_error("Missing tool: build")
         print("  Install with: pip install build")
         return False
-    
+
     # Check twine module
     try:
-        subprocess.run([sys.executable, "-m", "twine", "--version"], 
+        subprocess.run([sys.executable, "-m", "twine", "--version"],
                       check=True, capture_output=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
         print_error("Missing tool: twine")
         print("  Install with: pip install twine")
         return False
-    
+
     print("  All prerequisites met")
     return True
 
@@ -103,14 +103,14 @@ def check_prerequisites() -> bool:
 def build_package() -> bool:
     """Build the package."""
     print_step("Building package...")
-    
+
     # Build source distribution and wheel
     if not run_command(
         [sys.executable, "-m", "build"],
         "Building source distribution and wheel..."
     ):
         return False
-    
+
     print_step("Build completed successfully!")
     return True
 
@@ -118,55 +118,55 @@ def build_package() -> bool:
 def verify_package() -> bool:
     """Verify the built package."""
     print_step("Verifying package...")
-    
+
     # Check if dist directory exists and has files
     dist_dir = Path("dist")
     if not dist_dir.exists():
         print_error("dist/ directory not found")
         return False
-    
+
     files = list(dist_dir.glob("*"))
     if not files:
         print_error("No files found in dist/")
         return False
-    
+
     print(f"  Found {len(files)} file(s) in dist/:")
     for file in files:
         print(f"    - {file.name}")
-    
+
     # Check package with twine
     if not run_command(
         [sys.executable, "-m", "twine", "check", "dist/*"],
         "Checking package with twine..."
     ):
         return False
-    
+
     return True
 
 
 def main() -> int:
     """Main function."""
     print(f"{GREEN}HexSwitch Package Builder{RESET}\n")
-    
+
     # Change to project root
     script_dir = Path(__file__).parent.parent
     os.chdir(script_dir)
-    
+
     # Check prerequisites
     if not check_prerequisites():
         return 1
-    
+
     # Clean old builds
     clean_build_dirs()
-    
+
     # Build package
     if not build_package():
         return 1
-    
+
     # Verify package
     if not verify_package():
         return 1
-    
+
     success_marker = "✓" if sys.platform != "win32" else "[OK]"
     print(f"\n{GREEN}{success_marker} Package built successfully!{RESET}")
     print("\nNext steps:")
@@ -176,7 +176,7 @@ def main() -> int:
     print("     python -m twine upload --repository testpypi dist/*")
     print("  3. Upload to PyPI:")
     print("     python -m twine upload dist/*")
-    
+
     return 0
 
 

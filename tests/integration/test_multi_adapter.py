@@ -7,10 +7,9 @@ from urllib.request import Request, urlopen
 
 import pytest
 
+from hexswitch.runtime import Runtime
 from hexswitch.shared.config import validate_config
 from hexswitch.shared.envelope import Envelope
-from hexswitch.runtime import Runtime
-
 
 # Timeout for integration tests that start runtime (in seconds)
 RUNTIME_TEST_TIMEOUT = 20
@@ -24,7 +23,6 @@ def test_runtime_with_http_inbound_and_http_client_outbound() -> None:
 
     # Create test handler that uses HTTP client
     test_module = ModuleType("test_handlers")
-    http_client_adapter = None
 
     def proxy_handler(envelope: Envelope) -> Envelope:
         # This handler would use the HTTP client adapter

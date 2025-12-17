@@ -1,7 +1,6 @@
 """Logger utilities for HexSwitch."""
 
 import logging
-from typing import Optional
 
 
 def get_logger(

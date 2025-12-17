@@ -2,14 +2,14 @@
 
 import pytest
 
-from hexswitch.shared.envelope import Envelope
 from hexswitch.ports import PortNotFoundError, get_port_registry, port, reset_port_registry
+from hexswitch.shared.envelope import Envelope
 
 
 def test_load_port_success():
     """Test loading registered port."""
     reset_port_registry()
-    
+
     @port(name="test_load_port")
     def test_handler(envelope: Envelope) -> Envelope:
         return Envelope.success({"result": "ok"})
@@ -32,7 +32,7 @@ def test_load_port_missing():
 def test_load_port_calls_handler():
     """Test that loaded port can be called."""
     reset_port_registry()
-    
+
     @port(name="test_call_port")
     def test_handler(envelope: Envelope) -> Envelope:
         value = envelope.body.get("input", "default") if envelope.body else "default"
@@ -41,7 +41,7 @@ def test_load_port_calls_handler():
     registry = get_port_registry()
     envelope = Envelope(path="/test", body={"input": "test"})
     results = registry.route("test_call_port", envelope)
-    
+
     assert len(results) == 1
     assert results[0].data == {"value": "test"}
 

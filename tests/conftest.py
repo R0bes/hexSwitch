@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable
+from typing import Callable
 
 import pytest
 
@@ -34,12 +34,12 @@ def pytest_collection_modifyitems(config, items):
         if "test_envelope" in str(item.fspath) or "test_ports" in str(item.fspath) or "test_strategies" in str(item.fspath):
             item.add_marker(pytest.mark.basic)
             item.add_marker(pytest.mark.order(1))
-        
+
         # Mark unit tests
         elif "unit" in str(item.fspath):
             item.add_marker(pytest.mark.unit)
             item.add_marker(pytest.mark.order(2))
-        
+
         # Mark integration tests
         elif "integration" in str(item.fspath):
             if "e2e" in str(item.fspath) or "test_e2e" in str(item.fspath):

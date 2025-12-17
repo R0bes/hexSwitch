@@ -6,15 +6,13 @@ import logging
 import threading
 from typing import Any
 
+import uvicorn
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
-import uvicorn
 
-from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError
-from hexswitch.adapters.http._Http_Envelope import HttpEnvelope
 from hexswitch.adapters.base import InboundAdapter
-from hexswitch.shared.envelope import Envelope
-from hexswitch.adapters.exceptions import HandlerError
+from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
+from hexswitch.adapters.http._Http_Envelope import HttpEnvelope
 from hexswitch.ports import PortError, get_port_registry
 from hexswitch.shared.helpers import parse_path_params
 
@@ -184,7 +182,7 @@ class FastApiHttpAdapterServer(InboundAdapter):
 
             # Start server in background
             import threading
-            
+
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             self._server_loop = loop
@@ -221,11 +219,11 @@ class FastApiHttpAdapterServer(InboundAdapter):
             # Gracefully stop the uvicorn server
             if self._server:
                 self._server.should_exit = True
-                
+
             # Cancel the server task
             if self._server_task and not self._server_task.done():
                 self._server_task.cancel()
-            
+
             # Stop the event loop gracefully
             if self._server_loop and self._server_loop.is_running():
                 try:
@@ -236,7 +234,7 @@ class FastApiHttpAdapterServer(InboundAdapter):
                     time.sleep(0.2)
                 except Exception:
                     pass  # Loop may already be closed
-            
+
             # Wait for server thread to finish (with timeout)
             if self._server_thread and self._server_thread.is_alive():
                 import time
@@ -244,7 +242,7 @@ class FastApiHttpAdapterServer(InboundAdapter):
                 start_time = time.time()
                 while self._server_thread.is_alive() and (time.time() - start_time) < timeout:
                     time.sleep(0.1)
-            
+
             self._running = False
             logger.info(f"HTTP adapter '{self.name}' stopped")
         except GeneratorExit:

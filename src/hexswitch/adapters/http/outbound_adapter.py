@@ -6,9 +6,9 @@ from typing import Any
 
 import requests
 
+from hexswitch.adapters.base import OutboundAdapter
 from hexswitch.adapters.exceptions import AdapterConnectionError
 from hexswitch.adapters.http._Http_Envelope import HttpEnvelope
-from hexswitch.adapters.base import OutboundAdapter
 from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class HttpAdapterClient(OutboundAdapter):
 
     def is_connected(self) -> bool:
         """Check if adapter is currently connected.
-        
+
         Returns:
             True if connected, False otherwise.
         """
@@ -79,15 +79,15 @@ class HttpAdapterClient(OutboundAdapter):
 
     def from_envelope(self, envelope: Envelope) -> tuple[str, str, dict[str, str], dict[str, Any] | None]:
         """Convert Envelope request to HTTP request.
-        
+
         Args:
             envelope: Request envelope.
-            
+
         Returns:
             Tuple of (method, url, headers, body_dict).
         """
         return self._converter.envelope_to_request(envelope, self.base_url)
-    
+
     def to_envelope(
         self,
         status_code: int,
@@ -96,41 +96,41 @@ class HttpAdapterClient(OutboundAdapter):
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert HTTP response to Envelope.
-        
+
         Args:
             status_code: HTTP status code.
             data: Response data.
             headers: Response headers.
             original_envelope: Original request envelope.
-            
+
         Returns:
             Response envelope.
         """
         return self._converter.response_to_envelope(status_code, data, headers, original_envelope)
-    
+
     def request(self, envelope: Envelope) -> Envelope:
         """Make HTTP request using Envelope.
-        
+
         Converts Envelope → HTTP Request → HTTP Response → Envelope.
-        
+
         Args:
             envelope: Request envelope with path, method, body, headers, etc.
-            
+
         Returns:
             Response envelope.
-            
+
         Raises:
             RuntimeError: If adapter is not connected.
         """
         if not self._connected or not self.session:
             raise RuntimeError(f"HTTP client adapter '{self.name}' is not connected")
-        
+
         # Convert Envelope → HTTP Request using converter
         method, url, request_headers, body = self.from_envelope(envelope)
-        
+
         # Merge with default headers
         request_headers = {**self.headers, **request_headers}
-        
+
         try:
             # Make HTTP request
             response = self.session.request(
@@ -142,13 +142,13 @@ class HttpAdapterClient(OutboundAdapter):
                 timeout=self.timeout,
             )
             response.raise_for_status()
-            
+
             # Convert HTTP Response → Envelope using converter
             try:
                 response_data = response.json()
             except (ValueError, json.JSONDecodeError):
                 response_data = {"raw": response.text}
-            
+
             return self.to_envelope(
                 status_code=response.status_code,
                 data=response_data,

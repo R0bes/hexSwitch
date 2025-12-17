@@ -241,10 +241,7 @@ def test_cli_run_starts_runtime() -> None:
                     pass
                 else:
                     # Unexpected exit - might be an issue
-                    assert False, (
-                        f"Process exited unexpectedly: {poll_result}\n"
-                        f"stdout: {stdout}\nstderr: {stderr}"
-                    )
+                    raise AssertionError(f"Process exited unexpectedly: {poll_result}\n" f"stdout: {stdout}\nstderr: {stderr}")
             else:
                 # Process is still running - good! Now terminate it
                 try:

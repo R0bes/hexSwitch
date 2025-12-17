@@ -17,7 +17,7 @@ class WebSocketEnvelope:
         websocket_id: int | None = None,
     ) -> Envelope:
         """Convert WebSocket message to Envelope (alias for message_to_envelope).
-        
+
         This method implements the abstract request_to_envelope method
         by delegating to message_to_envelope.
         """
@@ -31,13 +31,13 @@ class WebSocketEnvelope:
         websocket_id: int | None = None,
     ) -> Envelope:
         """Convert WebSocket message to Envelope.
-        
+
         Args:
             message: WebSocket message (string or bytes).
             path: WebSocket path.
             remote_address: Remote address.
             websocket_id: WebSocket connection ID.
-            
+
         Returns:
             Request envelope.
         """
@@ -47,23 +47,23 @@ class WebSocketEnvelope:
                 message_str = message.decode("utf-8")
             else:
                 message_str = str(message)
-            
+
             try:
                 message_data = json.loads(message_str)
             except (json.JSONDecodeError, TypeError):
                 message_data = {"raw": message_str}
         except Exception:
             message_data = {"raw": str(message)}
-        
+
         metadata: dict[str, Any] = {
             "raw_message": str(message),
         }
-        
+
         if remote_address:
             metadata["remote_address"] = remote_address
         if websocket_id:
             metadata["websocket_id"] = websocket_id
-        
+
         return Envelope(
             path=path,
             method=None,  # WebSocket doesn't use HTTP methods
@@ -76,7 +76,7 @@ class WebSocketEnvelope:
 
     def envelope_to_response(self, envelope: Envelope) -> str:
         """Convert Envelope to WebSocket message (implements abstract method).
-        
+
         This method implements the abstract envelope_to_response method
         by delegating to envelope_to_message.
         """
@@ -84,10 +84,10 @@ class WebSocketEnvelope:
 
     def envelope_to_message(self, envelope: Envelope) -> str:
         """Convert Envelope to WebSocket message.
-        
+
         Args:
             envelope: Response envelope.
-            
+
         Returns:
             WebSocket message as JSON string.
         """
@@ -100,10 +100,10 @@ class WebSocketEnvelope:
 
     def envelope_to_request(self, envelope: Envelope) -> str:
         """Convert Envelope to WebSocket request message.
-        
+
         Args:
             envelope: Request envelope.
-            
+
         Returns:
             WebSocket message as JSON string.
         """
@@ -118,7 +118,7 @@ class WebSocketEnvelope:
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert WebSocket response message to Envelope (implements abstract method).
-        
+
         This method implements the abstract response_to_envelope method
         by delegating to message_to_envelope_response.
         """
@@ -130,11 +130,11 @@ class WebSocketEnvelope:
         original_envelope: Envelope | None = None,
     ) -> Envelope:
         """Convert WebSocket response message to Envelope.
-        
+
         Args:
             message: WebSocket message.
             original_envelope: Original request envelope.
-            
+
         Returns:
             Response envelope.
         """
@@ -144,14 +144,14 @@ class WebSocketEnvelope:
                 message_str = message.decode("utf-8")
             else:
                 message_str = str(message)
-            
+
             try:
                 message_data = json.loads(message_str)
             except (json.JSONDecodeError, TypeError):
                 message_data = {"raw": message_str}
         except Exception:
             message_data = {"raw": str(message)}
-        
+
         # Check if it's an error
         if isinstance(message_data, dict) and "error" in message_data:
             return Envelope(

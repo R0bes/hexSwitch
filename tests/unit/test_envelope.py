@@ -1,6 +1,5 @@
 """Tests for Envelope class."""
 
-import pytest
 
 from hexswitch.shared.envelope import Envelope
 

@@ -1,6 +1,5 @@
 """Base class for stress and robustness tests."""
 
-import threading
 import time
 from typing import Any
 
@@ -52,7 +51,6 @@ class StressTestBase:
             iterations: Number of iterations to perform.
         """
         import gc
-        import sys
 
         initial_objects = len(gc.get_objects())
         for _ in range(iterations):

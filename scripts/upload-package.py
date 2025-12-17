@@ -64,13 +64,13 @@ def check_dist_files() -> bool:
         print_error("dist/ directory not found")
         print_info("Run scripts/build-package.py first")
         return False
-    
+
     files = list(dist_dir.glob("*"))
     if not files:
         print_error("No files found in dist/")
         print_info("Run scripts/build-package.py first")
         return False
-    
+
     print_step(f"Found {len(files)} file(s) in dist/:")
     for file in files:
         print(f"    - {file.name}")
@@ -79,21 +79,20 @@ def check_dist_files() -> bool:
 
 def upload_to_pypi(test: bool = False, skip_existing: bool = False) -> bool:
     """Upload package to PyPI or TestPyPI."""
-    repository = "testpypi" if test else "pypi"
     repo_name = "TestPyPI" if test else "PyPI"
-    
+
     print_step(f"Uploading to {repo_name}...")
-    
+
     cmd = [sys.executable, "-m", "twine", "upload"]
-    
+
     if test:
         cmd.extend(["--repository", "testpypi"])
-    
+
     if skip_existing:
         cmd.append("--skip-existing")
-    
+
     cmd.append("dist/*")
-    
+
     try:
         subprocess.run(cmd, check=True)
         print(f"{GREEN}{SUCCESS_MARKER} Upload successful!{RESET}")
@@ -106,7 +105,7 @@ def upload_to_pypi(test: bool = False, skip_existing: bool = False) -> bool:
 def main() -> int:
     """Main function."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="Upload HexSwitch package to PyPI or TestPyPI"
     )
@@ -125,44 +124,44 @@ def main() -> int:
         action="store_true",
         help="Perform a dry run (don't actually upload)"
     )
-    
+
     args = parser.parse_args()
-    
+
     print(f"{GREEN}HexSwitch Package Uploader{RESET}\n")
-    
+
     # Change to project root
     script_dir = Path(__file__).parent.parent
     os.chdir(script_dir)
-    
+
     # Check if dist files exist
     if not check_dist_files():
         return 1
-    
+
     # Check if twine is installed
     try:
-        subprocess.run([sys.executable, "-m", "twine", "--version"], 
+        subprocess.run([sys.executable, "-m", "twine", "--version"],
                       check=True, capture_output=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
         print_error("twine is not installed")
         print_info("Install with: pip install twine")
         return 1
-    
+
     repository = "TestPyPI" if args.test else "PyPI"
-    
+
     if args.dry_run:
         print_info(f"DRY RUN: Would upload to {repository}")
         print_info("Run without --dry-run to actually upload")
         return 0
-    
+
     print_warning(f"You are about to upload to {repository}")
     if not args.test:
         print_warning("This will publish the package to the public PyPI!")
-    
-    response = input(f"Continue? (yes/no): ").strip().lower()
+
+    response = input("Continue? (yes/no): ").strip().lower()
     if response not in ["yes", "y"]:
         print_info("Upload cancelled")
         return 0
-    
+
     # Upload
     if upload_to_pypi(test=args.test, skip_existing=args.skip_existing):
         print(f"\n{GREEN}{SUCCESS_MARKER} Package uploaded successfully!{RESET}")

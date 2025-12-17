@@ -7,11 +7,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 from typing import Any
 
-from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError
 from hexswitch.adapters.base import InboundAdapter
-from hexswitch.shared.envelope import Envelope
-from hexswitch.adapters.exceptions import HandlerError
+from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
 from hexswitch.ports import PortError, get_port_registry
+from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 

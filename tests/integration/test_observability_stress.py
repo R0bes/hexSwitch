@@ -3,14 +3,7 @@
 import threading
 import time
 
-import pytest
-
 from hexswitch.shared.observability import (
-    Counter,
-    Gauge,
-    Histogram,
-    MetricsCollector,
-    Tracer,
     create_metrics_collector,
     create_tracer,
 )
