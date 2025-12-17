@@ -178,4 +178,3 @@ def demo_mcp_client_handler(envelope: Envelope) -> Envelope:
     except Exception as e:
         logger.exception(f"Error using MCP client adapter: {e}")
         return Envelope.error(500, f"Error using MCP client: {str(e)}")
-

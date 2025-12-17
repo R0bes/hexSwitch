@@ -59,6 +59,7 @@ class HexSwitchAPIHandler(BaseHTTPRequestHandler):
         """Get list of available adapters."""
         # Import from the export script in the same directory
         import importlib.util
+
         export_script = Path(__file__).parent / "export_adapters.py"
         spec = importlib.util.spec_from_file_location("export_adapters", export_script)
         export_module = importlib.util.module_from_spec(spec)
@@ -155,4 +156,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
