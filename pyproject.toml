@@ -4,6 +4,35 @@ version = "0.1.0"
 description = "Hexagonal runtime switchboard for config-driven microservices"
 readme = "README.md"
 requires-python = ">=3.12"
+license = {text = "MIT"}
+keywords = [
+    "hexagonal-architecture",
+    "microservices",
+    "runtime",
+    "adapter-pattern",
+    "ports-adapters",
+    "http",
+    "grpc",
+    "websocket",
+    "mcp",
+    "fastapi",
+    "opentelemetry",
+]
+authors = [
+    {name = "HexSwitch Contributors"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Architecture",
+    "Topic :: System :: Networking",
+    "Framework :: FastAPI",
+]
 dependencies = [
     "pyyaml>=6.0",
     "requests>=2.31.0",
@@ -22,16 +51,13 @@ dependencies = [
     # Pydantic
     "pydantic>=2.5.0",
 ]
-authors = [
-    {name = "HexSwitch Contributors"}
-]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-]
+
+# Project URLs (update with your actual repository URL)
+[project.urls]
+Homepage = "https://github.com/yourusername/hexswitch"
+Documentation = "https://github.com/yourusername/hexswitch#readme"
+Repository = "https://github.com/yourusername/hexswitch"
+Issues = "https://github.com/yourusername/hexswitch/issues"
 
 [project.scripts]
 hexswitch = "hexswitch.app:main"
@@ -46,7 +72,8 @@ dev = [
     "radon>=6.0.0",
     "typer>=0.9.0",
     "tomli>=2.0.0; python_version < '3.11'",
-    "devtool @ file:./devops/devtool",
+    # Note: devtool is not included for PyPI compatibility
+    # Install locally with: pip install -e ./devops/devtool
 ]
 
 [build-system]
@@ -55,6 +82,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+hexswitch = ["py.typed"]
 
 [tool.ruff]
 line-length = 200

@@ -1,3 +1,10 @@
+.env
+.sindri
+.cursor
+.pytest_cache
+.coverage
+coverage.xml
+
 # Python
 __pycache__/
 *.py[cod]
