@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
-    name: Publish to PyPI
+  version:
+    name: Bump Version and Create Tag
     runs-on: ubuntu-latest
     # Only run if CI workflow completed successfully
     if: |
@@ -37,7 +37,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Step 1: Bump version AFTER all CI tests pass
       - name: Bump version
         id: bump
         run: |
@@ -47,7 +46,6 @@ jobs:
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Bumped version to $NEW_VERSION"
 
-      # Step 2: Commit version bump
       - name: Commit version bump
         run: |
           git add pyproject.toml
@@ -58,7 +56,6 @@ jobs:
             git push origin main
           fi
 
-      # Step 3: Create version tag AFTER version is committed
       - name: Create git tag
         run: |
           if git rev-parse "v${{ steps.bump.outputs.version }}" >/dev/null 2>&1; then
@@ -68,23 +65,36 @@ jobs:
             git push origin "v${{ steps.bump.outputs.version }}"
           fi
 
-      # Step 4: Install build dependencies
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [version]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install build dependencies
         run: |
           python -m pip install --upgrade pip
           pip install build twine
 
-      # Step 5: Build package with new version
       - name: Build package
         run: |
           python -m build
 
-      # Step 6: Validate package
       - name: Check package
         run: |
           python -m twine check dist/*
 
-      # Step 7: Publish to PyPI with new version
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
@@ -92,3 +102,82 @@ jobs:
         run: |
           python -m twine upload dist/*
 
+  publish-docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [version]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/hexswitch
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image digest
+        run: echo ${{ steps.meta.outputs.digest }}
+
+  publish-pages:
+    name: Build and Deploy GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [version]
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

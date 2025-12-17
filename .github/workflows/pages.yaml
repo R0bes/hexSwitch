@@ -1,9 +1,8 @@
 name: GitHub Pages
 
+# NOTE: This workflow is now integrated into CD workflow
+# Kept for reference or manual triggers only
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
