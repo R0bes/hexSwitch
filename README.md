@@ -190,18 +190,11 @@ python -m hexswitch.app validate
 python -m hexswitch.app run --dry-run
 ```
 
-For development, you can also use the devtool:
-
-```bash
-devtool version
-```
-
 ## Project Structure
 
 - `src/hexswitch/` - Python package (core runtime, adapters, handlers)
 - `tests/` - Test suite (unit and integration tests)
 - `docs/` - Project documentation
-- `devops/` - DevOps tools (Dockerfile, devtool)
 
 ## Development
 
@@ -213,7 +206,7 @@ Build and test the Docker image:
 
 ```bash
 # Build Docker image
-docker build -f devops/Dockerfile -t hexswitch:latest .
+docker build -t hexswitch:latest .
 
 # Test Docker image
 docker run --rm hexswitch:latest hexswitch version

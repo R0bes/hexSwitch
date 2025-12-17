@@ -80,12 +80,12 @@ def test_runtime_with_http_adapter_end_to_end() -> None:
 
     try:
         runtime.start()
-        time.sleep(0.3)  # Give server time to start
+        time.sleep(0.5)  # Give server time to start
 
         # Test GET /api/hello
         url = f"http://localhost:{free_port}/api/hello"
         req = Request(url)
-        with urlopen(req) as response:
+        with urlopen(req, timeout=10) as response:
             assert response.getcode() == 200
             data = json.loads(response.read().decode())
             assert data["message"] == "Hello from HexSwitch!"
@@ -95,7 +95,7 @@ def test_runtime_with_http_adapter_end_to_end() -> None:
         url = f"http://localhost:{free_port}/api/echo"
         req = Request(url, data=json.dumps({"test": "data"}).encode(), method="POST")
         req.add_header("Content-Type", "application/json")
-        with urlopen(req) as response:
+        with urlopen(req, timeout=10) as response:
             assert response.getcode() == 200
             data = json.loads(response.read().decode())
             assert data["echo"] == {"test": "data"}
@@ -104,7 +104,7 @@ def test_runtime_with_http_adapter_end_to_end() -> None:
         url = f"http://localhost:{free_port}/api/unknown"
         req = Request(url)
         with pytest.raises(Exception):  # urlopen raises HTTPError for 404
-            urlopen(req)
+            urlopen(req, timeout=10)
 
     finally:
         runtime.stop()

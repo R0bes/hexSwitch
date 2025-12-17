@@ -14,7 +14,7 @@ This Visual Test Lab is designed to visualize and test **hexSwitch** configurati
 
 The lab references the real hexSwitch implementation located in:
 - **Source Code**: `../src/hexswitch/` (read-only reference)
-- **Docker Image**: `../devops/Dockerfile` - Build with: `docker build -f devops/Dockerfile -t hexswitch:latest .`
+- **Docker Image**: `../Dockerfile` - Build with: `docker build -t hexswitch:latest .`
 - **Configuration**: `../hex-config.yaml` - Example configuration file
 - **CLI**: Use `hexswitch` commands to validate and run configurations
 

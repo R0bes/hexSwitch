@@ -69,7 +69,7 @@ def test_runtime_with_http_inbound_and_http_client_outbound() -> None:
 
     try:
         runtime.start()
-        time.sleep(0.3)
+        time.sleep(0.5)
 
         # Verify both adapters are running
         assert len(runtime.inbound_adapters) == 1
@@ -80,7 +80,7 @@ def test_runtime_with_http_inbound_and_http_client_outbound() -> None:
         # Test inbound endpoint
         url = f"http://localhost:{inbound_port}/api/proxy"
         req = Request(url)
-        with urlopen(req) as response:
+        with urlopen(req, timeout=10) as response:
             assert response.getcode() == 200
             data = json.loads(response.read().decode())
             assert data["proxied"] is True

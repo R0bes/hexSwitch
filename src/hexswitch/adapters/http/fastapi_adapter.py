@@ -3,6 +3,7 @@
 import asyncio
 import importlib
 import logging
+import threading
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
@@ -53,9 +54,11 @@ class FastApiHttpAdapterServer(InboundAdapter):
                 "OpenTelemetry FastAPI instrumentation not available"
             )
 
-        # Server task
+        # Server task and event loop
         self._server_task: asyncio.Task | None = None
         self._server: uvicorn.Server | None = None
+        self._server_loop: asyncio.AbstractEventLoop | None = None
+        self._server_thread: threading.Thread | None = None
 
     def _setup_routes(self) -> None:
         """Set up FastAPI routes from configuration."""
@@ -180,18 +183,19 @@ class FastApiHttpAdapterServer(InboundAdapter):
             self._server = uvicorn.Server(config)
 
             # Start server in background
+            import threading
+            
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+            self._server_loop = loop
             self._server_task = loop.create_task(self._server.serve())
 
             # Run server in separate thread
-            import threading
-
             def run_server():
                 loop.run_forever()
 
-            server_thread = threading.Thread(target=run_server, daemon=True)
-            server_thread.start()
+            self._server_thread = threading.Thread(target=run_server, daemon=True)
+            self._server_thread.start()
             self._running = True
 
             logger.info(
@@ -214,12 +218,40 @@ class FastApiHttpAdapterServer(InboundAdapter):
             return
 
         try:
+            # Gracefully stop the uvicorn server
             if self._server:
                 self._server.should_exit = True
-            if self._server_task:
+                
+            # Cancel the server task
+            if self._server_task and not self._server_task.done():
                 self._server_task.cancel()
+            
+            # Stop the event loop gracefully
+            if self._server_loop and self._server_loop.is_running():
+                try:
+                    # Schedule loop stop in a thread-safe way
+                    self._server_loop.call_soon_threadsafe(self._server_loop.stop)
+                    # Wait briefly for loop to stop
+                    import time
+                    time.sleep(0.2)
+                except Exception:
+                    pass  # Loop may already be closed
+            
+            # Wait for server thread to finish (with timeout)
+            if self._server_thread and self._server_thread.is_alive():
+                import time
+                timeout = 2.0
+                start_time = time.time()
+                while self._server_thread.is_alive() and (time.time() - start_time) < timeout:
+                    time.sleep(0.1)
+            
             self._running = False
             logger.info(f"HTTP adapter '{self.name}' stopped")
+        except GeneratorExit:
+            # GeneratorExit is expected during shutdown when lifespan generators are closed
+            # This is not an error, just a normal part of the shutdown process
+            logger.debug("GeneratorExit during shutdown (expected)")
+            self._running = False
         except Exception as e:
             raise AdapterStopError(
                 f"Failed to stop HTTP adapter '{self.name}': {e}"

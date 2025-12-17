@@ -14,6 +14,7 @@ class HttpEnvelope:
     """HTTP ↔ Envelope conversion logic for inbound and outbound adapters."""
 
     def request_to_envelope(
+        self,
         method: str,
         path: str,
         headers: dict[str, str],
@@ -162,6 +163,7 @@ class HttpEnvelope:
         return method, url, headers, body
 
     def response_to_envelope(
+        self,
         status_code: int,
         data: dict[str, Any],
         headers: dict[str, str],

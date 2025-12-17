@@ -29,9 +29,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Software Development :: Architecture",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
     "Topic :: System :: Networking",
-    "Framework :: FastAPI",
 ]
 dependencies = [
     "pyyaml>=6.0",
@@ -52,12 +51,12 @@ dependencies = [
     "pydantic>=2.5.0",
 ]
 
-# Project URLs (update with your actual repository URL)
+# Project URLs
 [project.urls]
-Homepage = "https://github.com/yourusername/hexswitch"
-Documentation = "https://github.com/yourusername/hexswitch#readme"
-Repository = "https://github.com/yourusername/hexswitch"
-Issues = "https://github.com/yourusername/hexswitch/issues"
+Homepage = "https://r0bes.github.io/hexSwitch/"
+Documentation = "https://r0bes.github.io/hexSwitch/"
+Repository = "https://github.com/R0bes/hexSwitch"
+Issues = "https://github.com/R0bes/hexSwitch/issues"
 
 [project.scripts]
 hexswitch = "hexswitch.app:main"
@@ -68,12 +67,11 @@ dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-timeout>=2.1.0",
+    "pytest-order>=1.0.0",
     "mypy>=1.5.0",
     "radon>=6.0.0",
     "typer>=0.9.0",
     "tomli>=2.0.0; python_version < '3.11'",
-    # Note: devtool is not included for PyPI compatibility
-    # Install locally with: pip install -e ./devops/devtool
 ]
 
 [build-system]
@@ -119,8 +117,10 @@ addopts = [
     "--cov-report=html",
 ]
 markers = [
+    "basic: Basic tests (run first)",
     "unit: Unit tests",
     "integration: Integration tests",
+    "e2e: End-to-end tests (run last)",
     "docker: Docker integration tests",
     "timeout: Test timeout marker (requires pytest-timeout)",
     "fast: Fast tests (< 1s)",

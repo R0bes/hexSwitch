@@ -40,6 +40,25 @@ def wait_for_server_ready(port: int, max_attempts: int = 20, timeout: float = 0.
     pytest.fail(f"Server on port {port} did not become ready after {max_attempts} attempts")
 
 
+def cleanup_adapter(adapter, module_name: str | None = None) -> None:
+    """Cleanup adapter and test module safely.
+    
+    Args:
+        adapter: Adapter instance to stop.
+        module_name: Optional module name to remove from sys.modules.
+    """
+    try:
+        time.sleep(0.2)  # Give time for response to complete
+        if adapter and hasattr(adapter, 'stop'):
+            adapter.stop()
+        time.sleep(0.5)  # Give server time to shut down gracefully
+    except Exception:
+        pass  # Ignore errors during cleanup
+    
+    if module_name and module_name in sys.modules:
+        del sys.modules[module_name]
+
+
 @pytest.mark.security
 class TestHttpAdapterRouting(SecurityTestBase):
     """Test HTTP adapter routing and path matching."""
@@ -79,11 +98,7 @@ class TestHttpAdapterRouting(SecurityTestBase):
                 data = json.loads(response.read().decode())
                 assert data["id"] == "123"
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
-            if "test_path_handler" in sys.modules:
-                del sys.modules["test_path_handler"]
+            cleanup_adapter(adapter, "test_path_handler")
 
     def test_query_parameter_parsing(self) -> None:
         """Test query parameter parsing."""
@@ -121,11 +136,7 @@ class TestHttpAdapterRouting(SecurityTestBase):
                 assert data["params"]["q"] == "test"
                 assert data["params"]["limit"] == "10"
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
-            if "test_query_handler" in sys.modules:
-                del sys.modules["test_query_handler"]
+            cleanup_adapter(adapter, "test_query_handler")
 
     def test_base_path_handling(self) -> None:
         """Test base path handling."""
@@ -163,11 +174,7 @@ class TestHttpAdapterRouting(SecurityTestBase):
                 data = json.loads(response.read().decode())
                 assert data["path"] == "/hello"
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
-            if "test_base_handler" in sys.modules:
-                del sys.modules["test_base_handler"]
+            cleanup_adapter(adapter, "test_base_handler")
 
 
 @pytest.mark.security
@@ -210,9 +217,7 @@ class TestHttpAdapterSecurity(SecurityTestBase):
                     # 404 or error is acceptable
                     pass
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_sql_injection_in_query_params(self, handler_module: ModuleType) -> None:
         """Test SQL injection protection in query parameters."""
@@ -249,9 +254,7 @@ class TestHttpAdapterSecurity(SecurityTestBase):
                 except Exception:
                     pass
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_xss_in_query_params(self, handler_module: ModuleType) -> None:
         """Test XSS protection in query parameters."""
@@ -286,9 +289,7 @@ class TestHttpAdapterSecurity(SecurityTestBase):
                 except Exception:
                     pass
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_content_length_manipulation(self, handler_module: ModuleType) -> None:
         """Test Content-Length header manipulation."""
@@ -324,9 +325,7 @@ class TestHttpAdapterSecurity(SecurityTestBase):
                 # Error is acceptable
                 pass
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_oversized_request_body(self, handler_module: ModuleType) -> None:
         """Test handling of oversized request bodies."""
@@ -364,9 +363,7 @@ class TestHttpAdapterSecurity(SecurityTestBase):
                 # Timeout or error is acceptable for oversized bodies
                 pass
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
 
 @pytest.mark.edge_cases
@@ -403,9 +400,7 @@ class TestHttpAdapterEdgeCases:
                 # Should handle gracefully, not crash
                 assert response.getcode() in [200, 400, 500]
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_empty_request_body(self, handler_module: ModuleType) -> None:
         """Test handling of empty request body."""
@@ -436,9 +431,7 @@ class TestHttpAdapterEdgeCases:
                 # Should handle empty body
                 assert response.getcode() in [200, 400]
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_handler_exception_handling(self) -> None:
         """Test that handler exceptions don't expose stack traces."""
@@ -482,11 +475,7 @@ class TestHttpAdapterEdgeCases:
             assert "Traceback" not in str(data)
             assert "File" not in str(data)
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
-            if "test_failing_handler" in sys.modules:
-                del sys.modules["test_failing_handler"]
+            cleanup_adapter(adapter, "test_failing_handler")
 
     def test_route_not_found(self) -> None:
         """Test 404 handling for non-existent routes."""
@@ -513,9 +502,7 @@ class TestHttpAdapterEdgeCases:
                 # Some HTTP libraries raise exceptions for 404
                 assert "404" in str(e) or "Not Found" in str(e)
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_method_not_supported(self, handler_module: ModuleType) -> None:
         """Test handling of unsupported HTTP methods."""
@@ -551,9 +538,7 @@ class TestHttpAdapterEdgeCases:
             except Exception:
                 pass
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 
     def test_port_boundary_conditions(self) -> None:
         """Test port boundary conditions."""
@@ -609,7 +594,5 @@ class TestHttpAdapterEdgeCases:
                 assert "result" in data
                 assert data["result"] == "success"
         finally:
-            time.sleep(0.1)  # Give time for response to complete
-            adapter.stop()
-            time.sleep(0.2)  # Give server time to shut down
+            cleanup_adapter(adapter)
 

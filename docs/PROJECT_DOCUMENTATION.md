@@ -333,18 +333,6 @@ hexswitch run
 hexswitch run --dry-run  # Zeigt Execution Plan ohne Start
 ```
 
-### DevTool Commands
-
-Zusätzlich zu den HexSwitch-Commands steht das DevTool zur Verfügung:
-
-```bash
-devtool version          # Version anzeigen
-devtool setup            # Projekt-Setup
-devtool install          # Projekt installieren
-devtool test             # Tests ausführen
-devtool lint             # Linting ausführen
-devtool format           # Code formatieren
-```
 
 ---
 
@@ -365,9 +353,6 @@ hexSwitch/
 │   ├── unit/              # Unit-Tests
 │   └── integration/       # Integration-Tests
 ├── docs/                   # Dokumentation
-├── devops/                 # DevOps-Tools
-│   ├── Dockerfile         # Docker-Image
-│   └── devtool/          # DevTool
 ├── templates/              # Konfigurations-Templates
 └── pyproject.toml         # Projekt-Konfiguration
 ```
@@ -456,7 +441,7 @@ Aktueller Coverage-Threshold: **50%** (ziel: schrittweise Erhöhung)
 #### Build
 
 ```bash
-docker build -f devops/Dockerfile -t hexswitch:latest .
+docker build -t hexswitch:latest .
 ```
 
 #### Run

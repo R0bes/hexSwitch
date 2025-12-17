@@ -14,13 +14,52 @@ from opentelemetry.sdk.trace import (
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     ConsoleSpanExporter,
+    SpanExporter,
+    SpanExportResult,
 )
+from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.resources import Resource
+import sys
 
 logger = logging.getLogger(__name__)
 
 # Initialize OpenTelemetry TracerProvider
 _tracer_provider: TracerProvider | None = None
+
+
+class SafeConsoleSpanExporter(SpanExporter):
+    """Console span exporter that handles closed file errors gracefully."""
+
+    def __init__(self, out=None):
+        """Initialize safe console exporter.
+        
+        Args:
+            out: Output stream (default: sys.stdout).
+        """
+        self._exporter = ConsoleSpanExporter(out=out or sys.stdout)
+
+    def export(self, spans: list[ReadableSpan]) -> SpanExportResult:
+        """Export spans with error handling.
+        
+        Args:
+            spans: List of spans to export.
+            
+        Returns:
+            Export result.
+        """
+        try:
+            return self._exporter.export(spans)
+        except (ValueError, OSError) as e:
+            if "closed file" in str(e).lower() or "I/O operation on closed file" in str(e):
+                return SpanExportResult.SUCCESS
+            raise
+
+    def shutdown(self) -> None:
+        """Shutdown exporter."""
+        try:
+            self._exporter.shutdown()
+        except Exception:
+            pass
 
 
 def _get_tracer_provider() -> TracerProvider:
@@ -34,8 +73,7 @@ def _get_tracer_provider() -> TracerProvider:
         _tracer_provider = SDKTracerProvider(
             resource=Resource.create({"service.name": "hexswitch"})
         )
-        # Add console exporter (can be replaced with OTLP, Jaeger, etc.)
-        _tracer_provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+        _tracer_provider.add_span_processor(BatchSpanProcessor(SafeConsoleSpanExporter(out=sys.stdout)))
         trace.set_tracer_provider(_tracer_provider)
     return _tracer_provider
 

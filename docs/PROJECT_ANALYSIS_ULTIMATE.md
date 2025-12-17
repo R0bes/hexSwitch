@@ -136,9 +136,6 @@ hexSwitch/
 │   ├── PROJECT_DOCUMENTATION.md
 │   ├── IMPLEMENTATION_PLAN.md
 │   └── hexswitch_shell_spec.md
-├── devops/                  # DevOps Tools
-│   ├── Dockerfile          # Multi-Stage Docker Build
-│   └── devtool/            # Development Tool CLI
 ├── example/                 # Beispiel-Services
 │   └── services/           # 3 Beispiel-Services
 ├── visual-test-lab/        # Visual Testing Lab (TypeScript/React)
@@ -401,7 +398,6 @@ tests/
    - ✅ Umfassende Tests
    - ✅ Klare Dokumentation
    - ✅ Docker-Support
-   - ✅ DevTool für Entwicklung
 
 4. **Observability:**
    - ✅ OpenTelemetry Integration

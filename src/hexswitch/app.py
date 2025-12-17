@@ -1,7 +1,6 @@
 """Main application entry point for HexSwitch."""
 
 import argparse
-import logging
 import sys
 from pathlib import Path
 
@@ -13,31 +12,12 @@ from hexswitch.shared.config import (
     load_config,
     validate_config,
 )
+from hexswitch.shared.logging import get_logger, setup_logging
 from hexswitch.runtime import build_execution_plan, print_execution_plan, run_runtime
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 TAGLINE = "Hexagonal runtime switchboard for config-driven microservices"
-
-
-def setup_logging(log_level: str) -> None:
-    """Set up logging configuration.
-
-    Args:
-        log_level: Log level (DEBUG, INFO, WARNING, ERROR).
-    """
-    level_map = {
-        "DEBUG": logging.DEBUG,
-        "INFO": logging.INFO,
-        "WARNING": logging.WARNING,
-        "ERROR": logging.ERROR,
-    }
-
-    numeric_level = level_map.get(log_level.upper(), logging.INFO)
-    logging.basicConfig(
-        level=numeric_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
 
 
 def cmd_version() -> int:
@@ -131,13 +111,11 @@ def cmd_run(args: argparse.Namespace) -> int:
         print_execution_plan(plan)
         return 0
 
-    # Run mode: start runtime (not implemented yet)
+    # Run mode: start runtime
     try:
+        logger.info(f"Starting HexSwitch runtime with config: {config_path}")
         run_runtime(config)
         return 0
-    except NotImplementedError:
-        logger.error("Runtime execution is not yet implemented")
-        return 2
     except Exception as e:
         logger.error(f"Runtime failure: {e}")
         return 2
@@ -203,7 +181,7 @@ def main() -> int:
     args = parser.parse_args()
 
     # Set up logging (must be done before any logger calls)
-    setup_logging(args.log_level)
+    setup_logging(level=args.log_level, service_name="hexswitch")
 
     # Handle commands
     if args.command == "version" or args.command is None:

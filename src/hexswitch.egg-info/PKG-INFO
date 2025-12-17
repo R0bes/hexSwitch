@@ -16,9 +16,8 @@ Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
-Classifier: Topic :: Software Development :: Architecture
+Classifier: Topic :: Internet :: WWW/HTTP :: HTTP Servers
 Classifier: Topic :: System :: Networking
-Classifier: Framework :: FastAPI
 Requires-Python: >=3.12
 Description-Content-Type: text/markdown
 License-File: LICENSE

@@ -15,6 +15,8 @@ from opentelemetry.sdk.metrics import MeterProvider as SDKMeterProvider
 from opentelemetry.sdk.metrics.export import (
     PeriodicExportingMetricReader,
     ConsoleMetricExporter,
+    MetricExporter,
+    MetricExportResult,
 )
 import sys
 from opentelemetry.sdk.resources import Resource
@@ -25,6 +27,70 @@ logger = logging.getLogger(__name__)
 _meter_provider: MeterProvider | None = None
 
 
+class SafeConsoleMetricExporter(MetricExporter):
+    """Console metric exporter that handles closed file errors gracefully."""
+
+    def __init__(self, out=None):
+        """Initialize safe console exporter.
+        
+        Args:
+            out: Output stream (default: sys.stdout).
+        """
+        self._exporter = ConsoleMetricExporter(out=out or sys.stdout)
+        # Delegate required attributes from the internal exporter
+        self._preferred_temporality = self._exporter._preferred_temporality
+        self._preferred_aggregation = self._exporter._preferred_aggregation
+
+    def export(self, metrics_data: Any, timeout_millis: float = 10_000, **kwargs) -> MetricExportResult:
+        """Export metrics with error handling.
+        
+        Args:
+            metrics_data: Metric data to export.
+            timeout_millis: Export timeout in milliseconds.
+            **kwargs: Additional keyword arguments.
+            
+        Returns:
+            Export result.
+        """
+        try:
+            return self._exporter.export(metrics_data, timeout_millis=timeout_millis, **kwargs)
+        except (ValueError, OSError) as e:
+            if "closed file" in str(e).lower() or "I/O operation on closed file" in str(e):
+                return MetricExportResult.SUCCESS
+            raise
+
+    def force_flush(self, timeout_millis: float = 10_000, **kwargs) -> bool:
+        """Force flush metrics with error handling.
+        
+        Args:
+            timeout_millis: Flush timeout in milliseconds.
+            **kwargs: Additional keyword arguments.
+            
+        Returns:
+            True if flush was successful, False otherwise.
+        """
+        try:
+            return self._exporter.force_flush(timeout_millis=timeout_millis, **kwargs)
+        except (ValueError, OSError) as e:
+            if "closed file" in str(e).lower() or "I/O operation on closed file" in str(e):
+                return True
+            return False
+        except Exception:
+            return False
+
+    def shutdown(self, timeout_millis: float = 30_000, **kwargs) -> None:
+        """Shutdown exporter.
+        
+        Args:
+            timeout_millis: Shutdown timeout in milliseconds.
+            **kwargs: Additional keyword arguments.
+        """
+        try:
+            self._exporter.shutdown(timeout_millis=timeout_millis, **kwargs)
+        except Exception:
+            pass
+
+
 def _get_meter_provider() -> MeterProvider:
     """Get or create global meter provider.
     
@@ -33,12 +99,11 @@ def _get_meter_provider() -> MeterProvider:
     """
     global _meter_provider
     if _meter_provider is None:
-        # Use stdout for console exporter to avoid file closure issues
         _meter_provider = SDKMeterProvider(
             resource=Resource.create({"service.name": "hexswitch"}),
             metric_readers=[
                 PeriodicExportingMetricReader(
-                    ConsoleMetricExporter(out=sys.stdout), export_interval_millis=5000
+                    SafeConsoleMetricExporter(out=sys.stdout), export_interval_millis=5000
                 )
             ],
         )

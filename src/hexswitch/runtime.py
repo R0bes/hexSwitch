@@ -1,6 +1,5 @@
 """Runtime orchestration for HexSwitch."""
 
-import logging
 import signal
 from typing import Any
 
@@ -11,51 +10,94 @@ from hexswitch.adapters.base import InboundAdapter, OutboundAdapter
 from hexswitch.adapters.mcp import McpAdapterServer, McpAdapterClient
 from hexswitch.adapters.websocket import WebSocketAdapterServer, WebSocketAdapterClient
 from hexswitch.ports.registry import get_port_registry
+from hexswitch.shared.logging import get_logger
 from hexswitch.shared.observability import (
     get_global_metrics_collector,
     get_global_tracer,
     start_span,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def build_execution_plan(config: dict[str, Any]) -> dict[str, Any]:
     """Build execution plan from configuration.
 
     Args:
-        config: Configuration dictionary.
+        config: Configuration dictionary (may contain Pydantic models after validation).
 
     Returns:
         Execution plan dictionary showing which adapters will be activated.
     """
+    # Extract service name
+    service_config = config.get("service", {})
+    if hasattr(service_config, "name"):
+        # Pydantic model
+        service_name = service_config.name
+    elif isinstance(service_config, dict):
+        service_name = service_config.get("name", "unknown")
+    else:
+        service_name = "unknown"
+
     plan: dict[str, Any] = {
-        "service": config.get("service", {}).get("name", "unknown"),
+        "service": service_name,
         "inbound_adapters": [],
         "outbound_adapters": [],
     }
 
     # Collect enabled inbound adapters
-    inbound = config.get("inbound", {})
-    for adapter_name, adapter_config in inbound.items():
-        if isinstance(adapter_config, dict) and adapter_config.get("enabled", False):
-            plan["inbound_adapters"].append(
-                {
-                    "name": adapter_name,
-                    "config": adapter_config,
-                }
-            )
+    inbound = config.get("inbound")
+    if inbound is not None:
+        # Handle Pydantic model
+        if hasattr(inbound, "model_dump"):
+            inbound_dict = inbound.model_dump(exclude_none=True)
+            for adapter_name, adapter_config in inbound_dict.items():
+                if adapter_config and isinstance(adapter_config, dict):
+                    enabled = adapter_config.get("enabled", False)
+                    if enabled:
+                        plan["inbound_adapters"].append(
+                            {
+                                "name": adapter_name,
+                                "config": adapter_config,
+                            }
+                        )
+        # Handle dictionary
+        elif isinstance(inbound, dict):
+            for adapter_name, adapter_config in inbound.items():
+                if isinstance(adapter_config, dict) and adapter_config.get("enabled", False):
+                    plan["inbound_adapters"].append(
+                        {
+                            "name": adapter_name,
+                            "config": adapter_config,
+                        }
+                    )
 
     # Collect enabled outbound adapters
-    outbound = config.get("outbound", {})
-    for adapter_name, adapter_config in outbound.items():
-        if isinstance(adapter_config, dict) and adapter_config.get("enabled", False):
-            plan["outbound_adapters"].append(
-                {
-                    "name": adapter_name,
-                    "config": adapter_config,
-                }
-            )
+    outbound = config.get("outbound")
+    if outbound is not None:
+        # Handle Pydantic model
+        if hasattr(outbound, "model_dump"):
+            outbound_dict = outbound.model_dump(exclude_none=True)
+            for adapter_name, adapter_config in outbound_dict.items():
+                if adapter_config and isinstance(adapter_config, dict):
+                    enabled = adapter_config.get("enabled", False)
+                    if enabled:
+                        plan["outbound_adapters"].append(
+                            {
+                                "name": adapter_name,
+                                "config": adapter_config,
+                            }
+                        )
+        # Handle dictionary
+        elif isinstance(outbound, dict):
+            for adapter_name, adapter_config in outbound.items():
+                if isinstance(adapter_config, dict) and adapter_config.get("enabled", False):
+                    plan["outbound_adapters"].append(
+                        {
+                            "name": adapter_name,
+                            "config": adapter_config,
+                        }
+                    )
 
     return plan
 

@@ -27,7 +27,6 @@ Das Projekt wurde auf Ordnung, Redundanzen und Legacy-Code geprüft. Das Projekt
 - Root: `__pycache__/`
 - `src/hexswitch/` und Unterverzeichnisse
 - `tests/` und Unterverzeichnisse
-- `devops/devtool/` und Unterverzeichnisse
 - `example/services/` und Unterverzeichnisse
 
 ### 2. .gitignore Vollständigkeit
@@ -60,7 +59,7 @@ Das Projekt wurde auf Ordnung, Redundanzen und Legacy-Code geprüft. Das Projekt
 **Status:** ✅ Gut organisiert
 
 **Struktur-Bewertung:**
-- ✅ Klare Trennung von Core, Tests, Docs, DevOps
+- ✅ Klare Trennung von Core, Tests, Docs
 - ✅ Modulare Adapter-Struktur
 - ✅ Separate Test-Struktur (unit/integration)
 - ✅ Dokumentation gut organisiert
@@ -72,7 +71,6 @@ hexSwitch/
 ├── src/hexswitch/          # Core-Package (48 Python-Dateien)
 ├── tests/                  # Test-Suite (69 Dateien)
 ├── docs/                   # Dokumentation
-├── devops/                 # DevOps-Tools
 ├── example/                # Beispiel-Services
 ├── visual-test-lab/        # Visual Testing Lab
 └── .cursor/                # Cursor-Konfiguration

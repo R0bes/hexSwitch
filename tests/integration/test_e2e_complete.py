@@ -16,6 +16,7 @@ from hexswitch.runtime import Runtime, run_runtime
 E2E_TEST_TIMEOUT = 25
 
 
+@pytest.mark.e2e
 @pytest.mark.timeout(E2E_TEST_TIMEOUT)
 def test_complete_http_service_with_observability() -> None:
     """Test complete HTTP service with full observability."""
@@ -80,14 +81,14 @@ def test_complete_http_service_with_observability() -> None:
 
     try:
         runtime.start()
-        time.sleep(0.3)
+        time.sleep(0.5)
 
         # Test multiple endpoints
         base_url = f"http://localhost:{free_port}/api/v1"
 
         # GET request
         req = Request(f"{base_url}/status")
-        with urlopen(req) as response:
+        with urlopen(req, timeout=10) as response:
             assert response.getcode() == 200
             data = json.loads(response.read().decode())
             assert data["status"] == "ok"
@@ -96,7 +97,7 @@ def test_complete_http_service_with_observability() -> None:
         # POST request
         req = Request(f"{base_url}/data", data=json.dumps({"test": "data"}).encode(), method="POST")
         req.add_header("Content-Type", "application/json")
-        with urlopen(req) as response:
+        with urlopen(req, timeout=10) as response:
             assert response.getcode() == 200
             data = json.loads(response.read().decode())
             assert data["status"] == "ok"
@@ -122,6 +123,8 @@ def test_complete_http_service_with_observability() -> None:
             del sys.modules["e2e_handlers"]
 
 
+@pytest.mark.e2e
+@pytest.mark.e2e
 @pytest.mark.timeout(E2E_TEST_TIMEOUT)
 def test_runtime_graceful_shutdown_complete() -> None:
     """Test complete graceful shutdown scenario."""
@@ -171,6 +174,7 @@ def test_runtime_graceful_shutdown_complete() -> None:
     assert runtime._active_adapters_gauge.get() == 0
 
 
+@pytest.mark.e2e
 def test_config_validation_complete() -> None:
     """Test complete configuration validation."""
     # Valid config with all adapters

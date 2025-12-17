@@ -1,0 +1,21 @@
+title: HexSwitch Documentation
+description: Hexagonal runtime switchboard for config-driven microservices
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+
+# GitHub Pages settings
+github: [metadata]
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Architecture
+    url: /architecture_overview.html
+  - title: Development
+    url: /development_guide.html
+  - title: Documentation
+    url: /PROJECT_DOCUMENTATION.html
+

@@ -5,7 +5,7 @@
  * and serves as a reference for the Visual Test Lab.
  * 
  * Source: ../src/hexswitch/ (read-only reference)
- * Docker: ../devops/Dockerfile
+ * Docker: ../Dockerfile
  * Config: ../hex-config.yaml
  */
 
@@ -185,7 +185,7 @@ export interface ExecutionPlan {
 /**
  * Docker Image Reference
  * 
- * Build: docker build -f devops/Dockerfile -t hexswitch:latest .
+ * Build: docker build -t hexswitch:latest .
  * Run: docker run --rm hexswitch:latest hexswitch version
  * 
  * The Docker image contains the full hexSwitch runtime and can be used

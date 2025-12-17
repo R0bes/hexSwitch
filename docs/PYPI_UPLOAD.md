@@ -2,6 +2,38 @@
 
 Anleitung zum Hochladen von HexSwitch auf PyPI (Python Package Index).
 
+## Automatischer Upload via CI/CD
+
+**Neu**: HexSwitch wird automatisch zu PyPI hochgeladen, wenn:
+- Ein Push auf den `main` Branch erfolgt UND
+- Alle Tests (lint, test, type-check) erfolgreich sind
+
+### GitHub Secrets konfigurieren
+
+Für den automatischen Upload muss ein PyPI API Token als GitHub Secret konfiguriert werden:
+
+1. **PyPI API Token erstellen**:
+   - Gehe zu [pypi.org/account/login](https://pypi.org/account/login/)
+   - Navigiere zu Account Settings → API tokens
+   - Erstelle einen neuen API Token (Scope: "Entire account" oder nur für das Projekt)
+   - Kopiere den Token (beginnt mit `pypi-...`)
+
+2. **GitHub Secret hinzufügen**:
+   - Gehe zu deinem GitHub Repository
+   - Navigiere zu Settings → Secrets and variables → Actions
+   - Klicke auf "New repository secret"
+   - Name: `PYPI_API_TOKEN`
+   - Value: Dein PyPI API Token (z.B. `pypi-xxxxxxxxxxxxx`)
+   - Klicke auf "Add secret"
+
+3. **Automatischer Upload**:
+   - Nach jedem erfolgreichen Push auf `main` wird das Package automatisch gebaut und zu PyPI hochgeladen
+   - Der Upload erfolgt nur, wenn alle Tests bestehen
+
+### Manueller Upload
+
+Falls du manuell hochladen möchtest, folge den Anweisungen unten.
+
 ## Voraussetzungen
 
 1. **PyPI Account**: Erstelle einen Account auf [pypi.org](https://pypi.org) und [test.pypi.org](https://test.pypi.org)

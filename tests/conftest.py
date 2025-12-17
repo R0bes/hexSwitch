@@ -1,10 +1,18 @@
 """Pytest configuration and fixtures."""
 
 import sys
+from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable
 
 import pytest
+
+# Add src directory to Python path if not already there
+# This ensures hexswitch can be imported even when pytest is called directly
+project_root = Path(__file__).parent.parent.resolve()
+src_path = project_root / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
 from hexswitch.shared.envelope import Envelope
 from tests.unit.adapters.base.adapter_tester import AdapterTester
@@ -16,6 +24,30 @@ except ImportError:
     # pytest-timeout not installed, timeout markers will be ignored
     # Tests will rely on subprocess timeouts instead
     pass
+
+
+# Auto-mark tests based on directory structure
+def pytest_collection_modifyitems(config, items):
+    """Automatically mark tests based on their location."""
+    for item in items:
+        # Mark basic tests (core functionality)
+        if "test_envelope" in str(item.fspath) or "test_ports" in str(item.fspath) or "test_strategies" in str(item.fspath):
+            item.add_marker(pytest.mark.basic)
+            item.add_marker(pytest.mark.order(1))
+        
+        # Mark unit tests
+        elif "unit" in str(item.fspath):
+            item.add_marker(pytest.mark.unit)
+            item.add_marker(pytest.mark.order(2))
+        
+        # Mark integration tests
+        elif "integration" in str(item.fspath):
+            if "e2e" in str(item.fspath) or "test_e2e" in str(item.fspath):
+                item.add_marker(pytest.mark.e2e)
+                item.add_marker(pytest.mark.order(4))
+            else:
+                item.add_marker(pytest.mark.integration)
+                item.add_marker(pytest.mark.order(3))
 
 
 @pytest.fixture
