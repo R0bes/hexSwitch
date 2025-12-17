@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/logo.png" alt="HexSwitch Logo" width="200" />
+</div>
+
 # HexSwitch
 
 Hexagonal runtime switchboard for config-driven microservices.
@@ -99,6 +103,40 @@ hexswitch --version  # backwards compatible
 **Create example configuration:**
 ```bash
 hexswitch init
+```
+
+**Create configuration from template:**
+```bash
+hexswitch init --template hex-config.http-only
+hexswitch init --list-templates  # List available templates
+```
+
+## Configuration Templates
+
+HexSwitch supports Jinja2 templates for configuration files. Templates allow you to use environment variables and dynamic values in your configuration.
+
+**Template files** must have a `.j2` extension (e.g., `hex-config.yaml.j2`). The `load_config()` function automatically detects and renders templates before parsing YAML.
+
+**Available templates:**
+- `hex-config.yaml.j2` - Full configuration with all adapters
+- `hex-config.http-only.yaml.j2` - Minimal HTTP-only configuration
+- `hex-config.with-mcp.yaml.j2` - Configuration with MCP client adapter
+
+**Example template usage:**
+```yaml
+service:
+  name: {{ env.SERVICE_NAME | default("example-service") }}
+  runtime: python
+
+inbound:
+  http:
+    enabled: {{ env.ENABLE_HTTP | default(true) }}
+    port: {{ env.HTTP_PORT | default(8000) | int }}
+    base_path: {{ env.BASE_PATH | default("/api") }}
+```
+
+**Environment variables** are available via `env.VAR_NAME` in templates. Use Jinja2 filters like `default()`, `int()`, `bool()` for type conversion.
+hexswitch init
 # Creates hex-config.yaml with example configuration
 hexswitch init --force  # Overwrite existing file
 ```
@@ -152,10 +190,10 @@ python -m hexswitch.app validate
 python -m hexswitch.app run --dry-run
 ```
 
-For development, you can also use the wrapper script:
+For development, you can also use the devtool:
 
 ```bash
-bin/hexswitch-dev.sh version
+devtool version
 ```
 
 ## Project Structure
@@ -163,9 +201,7 @@ bin/hexswitch-dev.sh version
 - `src/hexswitch/` - Python package (core runtime, adapters, handlers)
 - `tests/` - Test suite (unit and integration tests)
 - `docs/` - Project documentation
-- `docker/` - Dockerfiles and related scripts
-- `infra/` - Infrastructure and deployment configuration
-- `bin/` - Helper scripts
+- `devops/` - DevOps tools (Dockerfile, devtool)
 
 ## Development
 
@@ -177,7 +213,7 @@ Build and test the Docker image:
 
 ```bash
 # Build Docker image
-docker build -f docker/Dockerfile -t hexswitch:latest .
+docker build -f devops/Dockerfile -t hexswitch:latest .
 
 # Test Docker image
 docker run --rm hexswitch:latest hexswitch version

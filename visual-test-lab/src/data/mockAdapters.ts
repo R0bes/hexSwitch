@@ -7,23 +7,36 @@ export interface Adapter {
   description: string;
 }
 
+/**
+ * Adapter definitions based on real hexSwitch implementation.
+ * 
+ * Reference: ../src/hexswitch/runtime.py
+ * Real adapters:
+ * - Inbound: http (src/hexswitch/adapters/http/adapter.py)
+ * - Outbound: http_client (src/hexswitch/adapters/http_client/adapter.py)
+ * - Outbound: mcp_client (src/hexswitch/adapters/mcp_client/adapter.py)
+ * 
+ * Additional adapters are included for visualization/testing purposes.
+ */
 export const mockAdapters: Adapter[] = [
-  // Inbound Adapters
+  // Real Inbound Adapters (from hexSwitch)
   {
     id: 'http-inbound',
     name: 'HTTP Adapter',
     type: 'inbound',
     category: 'Inbound',
     icon: 'Globe',
-    description: 'HTTP REST API endpoint adapter'
+    description: 'HTTP REST API endpoint adapter (real: src/hexswitch/adapters/http/adapter.py)'
   },
+  
+  // Planned/Visualization Inbound Adapters
   {
     id: 'grpc-inbound',
     name: 'gRPC Adapter',
     type: 'inbound',
     category: 'Inbound',
     icon: 'Network',
-    description: 'gRPC service adapter'
+    description: 'gRPC service adapter (planned)'
   },
   {
     id: 'message-consumer',
@@ -31,7 +44,7 @@ export const mockAdapters: Adapter[] = [
     type: 'inbound',
     category: 'Inbound',
     icon: 'MessageSquare',
-    description: 'Consume messages from broker'
+    description: 'Consume messages from broker (planned)'
   },
   {
     id: 'scheduler-trigger',
@@ -39,17 +52,35 @@ export const mockAdapters: Adapter[] = [
     type: 'inbound',
     category: 'Inbound',
     icon: 'Clock',
-    description: 'Time-based trigger adapter'
+    description: 'Time-based trigger adapter (planned)'
   },
   
-  // Outbound Adapters
+  // Real Outbound Adapters (from hexSwitch)
+  {
+    id: 'http-client',
+    name: 'HTTP Client',
+    type: 'outbound',
+    category: 'Outbound',
+    icon: 'ExternalLink',
+    description: 'HTTP client adapter (real: src/hexswitch/adapters/http_client/adapter.py)'
+  },
+  {
+    id: 'mcp-client',
+    name: 'MCP Client',
+    type: 'outbound',
+    category: 'Outbound',
+    icon: 'Server',
+    description: 'MCP client adapter (real: src/hexswitch/adapters/mcp_client/adapter.py)'
+  },
+  
+  // Planned/Visualization Outbound Adapters
   {
     id: 'db-mock',
     name: 'DB Mock',
     type: 'outbound',
     category: 'Outbound',
     icon: 'Database',
-    description: 'Mock database adapter'
+    description: 'Mock database adapter (planned)'
   },
   {
     id: 'cache-mock',
@@ -57,7 +88,7 @@ export const mockAdapters: Adapter[] = [
     type: 'outbound',
     category: 'Outbound',
     icon: 'Box',
-    description: 'Mock cache adapter'
+    description: 'Mock cache adapter (planned)'
   },
   {
     id: 'message-publisher',
@@ -65,15 +96,17 @@ export const mockAdapters: Adapter[] = [
     type: 'outbound',
     category: 'Outbound',
     icon: 'Send',
-    description: 'Publish messages to broker'
+    description: 'Publish messages to broker (planned)'
   },
+  
+  // Legacy/Compatibility
   {
     id: 'http-client-mock',
     name: 'HTTP Client Mock',
     type: 'outbound',
     category: 'Outbound',
     icon: 'ExternalLink',
-    description: 'Mock HTTP client adapter'
+    description: 'Mock HTTP client adapter (use http-client instead)'
   }
 ];
 
@@ -97,139 +130,9 @@ export interface MockNode {
 }
 
 export const mockAdapterNodes: AdapterNode[] = [
-  // Multiple adapters for api-in port
-  {
-    id: 'node-http-1',
-    adapterId: 'http-inbound',
-    position: { x: 0, y: 0 }, // Will be calculated on shell edge
-    config: {
-      method: 'POST',
-      path: '/orders',
-      handler: 'adapters.http_handlers:createOrder'
-    },
-    status: 'connected',
-    portId: 'api-in'
-  },
-  {
-    id: 'node-grpc-1',
-    adapterId: 'grpc-inbound',
-    position: { x: 0, y: 0 }, // Will be calculated on shell edge
-    config: {
-      service: 'OrderService',
-      methods: ['CreateOrder', 'GetOrder']
-    },
-    status: 'connected',
-    portId: 'api-in' // Same port as HTTP adapter
-  },
-  {
-    id: 'node-db-1',
-    adapterId: 'db-mock',
-    position: { x: 0, y: 0 },
-    config: {
-      type: 'PostgreSQL',
-      mode: 'deterministic',
-      table: 'orders'
-    },
-    status: 'connected',
-    portId: 'repo-out'
-  },
-  {
-    id: 'node-message-1',
-    adapterId: 'message-consumer',
-    position: { x: 0, y: 0 },
-    config: {
-      topic: 'order.events',
-      events: ['OrderCreated', 'OrderPaid', 'OrderCancelled']
-    },
-    status: 'connected',
-    portId: 'event-in'
-  },
-  {
-    id: 'node-scheduler-1',
-    adapterId: 'scheduler-trigger',
-    position: { x: 0, y: 0 },
-    config: {
-      interval: '5s',
-      task: 'PaymentCheck',
-      active: true
-    },
-    status: 'connected',
-    portId: 'command-bus'
-  },
-  {
-    id: 'node-http-client-1',
-    adapterId: 'http-client-mock',
-    position: { x: 0, y: 0 },
-    config: {
-      endpoint: 'https://payments/charge',
-      latency: 150,
-      response: { status: 'approved' }
-    },
-    status: 'connected',
-    portId: 'external-api-out'
-  }
+  // No default adapter nodes - start with empty state
 ];
 
 export const mockMockNodes: MockNode[] = [
-  {
-    id: 'mock-http-server',
-    name: 'HTTP Server',
-    type: 'http',
-    direction: 'inbound', // Mock sends data to adapter (inbound to system)
-    position: { x: 0, y: 0 }, // Will be calculated outside shell
-    config: {
-      endpoint: 'http://api.example.com',
-      methods: ['GET', 'POST']
-    },
-    connectedToAdapter: 'node-http-1' // Connected to HTTP adapter specifically
-  },
-  {
-    id: 'mock-grpc-server',
-    name: 'gRPC Server',
-    type: 'http', // Using http type for visualization
-    direction: 'inbound', // Mock sends data to adapter (inbound to system)
-    position: { x: 0, y: 0 }, // Will be calculated outside shell
-    config: {
-      endpoint: 'grpc://api.example.com:50051',
-      service: 'OrderService'
-    },
-    connectedToAdapter: 'node-grpc-1' // Connected to gRPC adapter specifically
-  },
-  {
-    id: 'mock-database',
-    name: 'PostgreSQL Mock',
-    type: 'database',
-    direction: 'outbound', // Adapter sends data to mock (outbound from system)
-    position: { x: 0, y: 0 },
-    config: {
-      host: 'localhost',
-      port: 5432,
-      database: 'testdb'
-    },
-    connectedToAdapter: 'node-db-1'
-  },
-  {
-    id: 'mock-message-broker',
-    name: 'NATS Mock',
-    type: 'message-broker',
-    direction: 'inbound', // Mock sends messages to adapter (inbound to system)
-    position: { x: 0, y: 0 },
-    config: {
-      url: 'nats://localhost:4222',
-      topics: ['order.events']
-    },
-    connectedToAdapter: 'node-message-1'
-  },
-  {
-    id: 'mock-payment-service',
-    name: 'Payment Service',
-    type: 'http',
-    direction: 'outbound', // Adapter sends requests to mock (outbound from system)
-    position: { x: 0, y: 0 },
-    config: {
-      endpoint: 'https://payments.example.com',
-      latency: 150
-    },
-    connectedToAdapter: 'node-http-client-1'
-  }
+  // No default mock nodes - start with empty state
 ];

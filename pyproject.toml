@@ -7,6 +7,20 @@ requires-python = ">=3.12"
 dependencies = [
     "pyyaml>=6.0",
     "requests>=2.31.0",
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+    "websockets>=12.0",
+    # OpenTelemetry
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-otlp>=1.20.0",
+    "opentelemetry-semantic-conventions>=0.60b0",
+    "opentelemetry-instrumentation-fastapi>=0.42b0",
+    # FastAPI
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    # Pydantic
+    "pydantic>=2.5.0",
 ]
 authors = [
     {name = "HexSwitch Contributors"}
@@ -27,8 +41,12 @@ dev = [
     "ruff>=0.1.0",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-timeout>=2.1.0",
     "mypy>=1.5.0",
     "radon>=6.0.0",
+    "typer>=0.9.0",
+    "tomli>=2.0.0; python_version < '3.11'",
+    "devtool @ file:./devops/devtool",
 ]
 
 [build-system]
@@ -39,7 +57,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.ruff]
-line-length = 100
+line-length = 200
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -74,6 +92,12 @@ markers = [
     "unit: Unit tests",
     "integration: Integration tests",
     "docker: Docker integration tests",
+    "timeout: Test timeout marker (requires pytest-timeout)",
+    "fast: Fast tests (< 1s)",
+    "security: Security-focused tests",
+    "stress: Stress and robustness tests",
+    "slow: Slow tests (< 60s)",
+    "edge_cases: Edge case tests",
 ]
 
 [tool.coverage.run]
@@ -93,7 +117,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "@abstractmethod",
 ]
-fail_under = 0  # Set to 0 initially, will be increased as implementation progresses
+fail_under = 50
 
 [tool.mypy]
 python_version = "3.12"

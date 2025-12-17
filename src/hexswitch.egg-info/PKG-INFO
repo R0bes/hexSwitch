@@ -11,12 +11,32 @@ Classifier: Programming Language :: Python :: 3.13
 Requires-Python: >=3.12
 Description-Content-Type: text/markdown
 Requires-Dist: pyyaml>=6.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: grpcio>=1.60.0
+Requires-Dist: grpcio-tools>=1.60.0
+Requires-Dist: websockets>=12.0
+Requires-Dist: opentelemetry-api>=1.20.0
+Requires-Dist: opentelemetry-sdk>=1.20.0
+Requires-Dist: opentelemetry-exporter-otlp>=1.20.0
+Requires-Dist: opentelemetry-semantic-conventions>=0.60b0
+Requires-Dist: opentelemetry-instrumentation-fastapi>=0.42b0
+Requires-Dist: fastapi>=0.104.0
+Requires-Dist: uvicorn[standard]>=0.24.0
+Requires-Dist: pydantic>=2.5.0
 Provides-Extra: dev
 Requires-Dist: ruff>=0.1.0; extra == "dev"
 Requires-Dist: pytest>=7.4.0; extra == "dev"
 Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: pytest-timeout>=2.1.0; extra == "dev"
 Requires-Dist: mypy>=1.5.0; extra == "dev"
 Requires-Dist: radon>=6.0.0; extra == "dev"
+Requires-Dist: typer>=0.9.0; extra == "dev"
+Requires-Dist: tomli>=2.0.0; python_version < "3.11" and extra == "dev"
+Requires-Dist: devtool@ file:./devops/devtool ; extra == "dev"
+
+<div align="center">
+  <img src="assets/logo.png" alt="HexSwitch Logo" width="200" />
+</div>
 
 # HexSwitch
 
@@ -26,7 +46,7 @@ Hexagonal runtime switchboard for config-driven microservices.
 
 HexSwitch is a runtime system designed to orchestrate microservices using a hexagonal architecture pattern. It provides a configuration-driven approach to wiring together inbound and outbound adapters, enabling flexible and maintainable service communication.
 
-**Note**: This repository is currently in its foundational scaffold phase. The project structure, tooling, and CI/CD pipelines are established, but no runtime behavior is implemented yet.
+**Status**: Core runtime functionality is implemented, including adapter framework, HTTP inbound adapter, and runtime orchestration. The system can now run microservices with config-driven adapter wiring.
 
 ## Installation
 
@@ -52,6 +72,55 @@ Run with coverage report:
 pytest --cov=src/hexswitch --cov-report=html
 ```
 
+Run only unit tests:
+
+```bash
+pytest tests/unit/
+```
+
+Run only integration tests:
+
+```bash
+pytest tests/integration/
+```
+
+Run Docker integration tests:
+
+```bash
+pytest tests/integration/test_docker.py -m docker
+```
+
+Run multi-container integration tests:
+
+```bash
+pytest tests/integration/test_multi_container.py -v
+```
+
+Or use the test scripts:
+
+```bash
+# Linux/Mac
+./scripts/test-docker.sh
+
+# Windows PowerShell
+.\scripts\test-docker.ps1
+```
+
+### Multi-Container Testing
+
+Test interactions between multiple HexSwitch instances:
+
+```bash
+# Start multi-container setup
+docker compose -f docker-compose.multi-test.yml up -d
+
+# Run tests
+pytest tests/integration/test_multi_container.py -v
+
+# Stop and cleanup
+docker compose -f docker-compose.multi-test.yml down -v
+```
+
 For detailed development instructions, see [Development Guide](docs/development_guide.md).
 
 ## Running the CLI
@@ -70,6 +139,40 @@ hexswitch --version  # backwards compatible
 **Create example configuration:**
 ```bash
 hexswitch init
+```
+
+**Create configuration from template:**
+```bash
+hexswitch init --template hex-config.http-only
+hexswitch init --list-templates  # List available templates
+```
+
+## Configuration Templates
+
+HexSwitch supports Jinja2 templates for configuration files. Templates allow you to use environment variables and dynamic values in your configuration.
+
+**Template files** must have a `.j2` extension (e.g., `hex-config.yaml.j2`). The `load_config()` function automatically detects and renders templates before parsing YAML.
+
+**Available templates:**
+- `hex-config.yaml.j2` - Full configuration with all adapters
+- `hex-config.http-only.yaml.j2` - Minimal HTTP-only configuration
+- `hex-config.with-mcp.yaml.j2` - Configuration with MCP client adapter
+
+**Example template usage:**
+```yaml
+service:
+  name: {{ env.SERVICE_NAME | default("example-service") }}
+  runtime: python
+
+inbound:
+  http:
+    enabled: {{ env.ENABLE_HTTP | default(true) }}
+    port: {{ env.HTTP_PORT | default(8000) | int }}
+    base_path: {{ env.BASE_PATH | default("/api") }}
+```
+
+**Environment variables** are available via `env.VAR_NAME` in templates. Use Jinja2 filters like `default()`, `int()`, `bool()` for type conversion.
+hexswitch init
 # Creates hex-config.yaml with example configuration
 hexswitch init --force  # Overwrite existing file
 ```
@@ -87,10 +190,10 @@ hexswitch run --dry-run
 # Shows execution plan without starting runtime
 ```
 
-**Run runtime (not yet implemented):**
+**Run runtime:**
 ```bash
 hexswitch run
-# Will start runtime once implemented
+# Starts the runtime with all enabled adapters
 ```
 
 ### Global Options
@@ -110,7 +213,7 @@ hexswitch validate
 # 3. Preview execution plan
 hexswitch run --dry-run
 
-# 4. Run (when implemented)
+# 4. Run runtime
 hexswitch run
 ```
 
@@ -123,20 +226,18 @@ python -m hexswitch.app validate
 python -m hexswitch.app run --dry-run
 ```
 
-For development, you can also use the wrapper script:
+For development, you can also use the devtool:
 
 ```bash
-bin/hexswitch-dev.sh version
+devtool version
 ```
 
 ## Project Structure
 
-- `src/hexswitch/` - Python package (skeleton)
+- `src/hexswitch/` - Python package (core runtime, adapters, handlers)
 - `tests/` - Test suite (unit and integration tests)
 - `docs/` - Project documentation
-- `docker/` - Dockerfiles and related scripts
-- `infra/` - Infrastructure and deployment configuration
-- `bin/` - Helper scripts
+- `devops/` - DevOps tools (Dockerfile, devtool)
 
 ## Development
 
@@ -148,7 +249,7 @@ Build and test the Docker image:
 
 ```bash
 # Build Docker image
-docker build -f docker/Dockerfile -t hexswitch:latest .
+docker build -f devops/Dockerfile -t hexswitch:latest .
 
 # Test Docker image
 docker run --rm hexswitch:latest hexswitch version

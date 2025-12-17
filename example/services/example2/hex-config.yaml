@@ -1,0 +1,54 @@
+service:
+  name: example2
+  runtime: python
+
+# Inbound adapters - gRPC only
+inbound:
+  grpc:
+    enabled: true
+    port: 50051
+    proto_path: ""
+    services:
+      - service_name: ExampleService
+        methods:
+          - method_name: GetExample
+            handler: example2_service.application.handlers.grpc_handlers:grpc_get_example_handler
+          - method_name: CreateExample
+            handler: example2_service.application.handlers.grpc_handlers:grpc_create_example_handler
+          - method_name: ListExamples
+            handler: example2_service.application.handlers.grpc_handlers:grpc_list_examples_handler
+          - method_name: UpdateExample
+            handler: example2_service.application.handlers.grpc_handlers:grpc_update_example_handler
+          - method_name: DeleteExample
+            handler: example2_service.application.handlers.grpc_handlers:grpc_delete_example_handler
+          # Inter-service communication methods
+          - method_name: CallExample1
+            handler: example2_service.application.handlers.grpc_handlers:call_example1_handler
+          - method_name: CallExample3
+            handler: example2_service.application.handlers.grpc_handlers:call_example3_handler
+
+# Outbound adapters - to communicate with other services
+outbound:
+  http_client:
+    enabled: true
+    name: example1_http
+    base_url: http://example1:8000
+    timeout: 30
+    headers:
+      Content-Type: application/json
+    ports:
+      - example1_http_port
+
+  websocket_client:
+    enabled: true
+    name: example3_ws
+    url: ws://example3:8080
+    timeout: 30
+    reconnect: true
+    reconnect_interval: 5
+    ports:
+      - example3_ws_port
+
+logging:
+  level: INFO
+

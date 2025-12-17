@@ -1,0 +1,23 @@
+[project]
+name = "devtool"
+version = "0.1.0"
+description = "Development tool for project management"
+requires-python = ">=3.12"
+dependencies = [
+    "typer>=0.9.0",
+    "tomli>=2.0.0; python_version < '3.11'",
+]
+authors = [
+    {name = "HexSwitch Contributors"}
+]
+
+[project.scripts]
+devtool = "devtool.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+

@@ -2,3 +2,7 @@
 
 __version__ = "0.1.0"
 
+from hexswitch.shared.envelope import Envelope
+
+__all__ = ["Envelope"]
+

@@ -1,0 +1,82 @@
+[tool.devtool]
+name = "Toolbox"
+version = "0.1.0"
+
+[commands.setup]
+description = "Setup project dependencies"
+command = "python -m venv .venv"
+platforms = ["windows", "unix"]
+
+[commands.install]
+description = "Install project in editable mode"
+command = "pip install -e ."
+platforms = ["windows", "unix"]
+
+[commands.version]
+description = "Version management"
+command = "python devops/devtool/version.py"
+platforms = ["windows", "unix"]
+
+[commands.test]
+description = "Run tests"
+command = "pytest tests/ -v"
+platforms = ["windows", "unix"]
+
+[commands.format]
+description = "Format code"
+command = "black src/ tests/ && isort src/ tests/"
+platforms = ["windows", "unix"]
+
+[commands.lint]
+description = "Run linting"
+command = "flake8 src/ tests/ && mypy src/"
+platforms = ["windows", "unix"]
+
+[commands.start]
+description = "Start application"
+command = "python -m toolbox.server"
+platforms = ["windows", "unix"]
+
+
+# Docker commands
+[commands.docker-build]
+description = "Build Docker image"
+command = "docker build -t toolbox:latest -f devops/Dockerfile ."
+platforms = ["windows", "unix"]
+
+[commands.docker-run]
+description = "Run container interactively"
+command = "docker run -it --rm -v ${PWD}/data:/app/data --name toolbox-container toolbox:latest"
+platforms = ["windows", "unix"]
+
+[commands.docker-test]
+description = "Run tests in container"
+command = "docker run --rm -v ${PWD}/tests:/app/tests -v ${PWD}/data:/app/data toolbox:latest python -m pytest tests/ -v"
+platforms = ["windows", "unix"]
+
+[commands.docker-shell]
+description = "Open shell in container"
+command = "docker run -it --rm -v ${PWD}/data:/app/data --entrypoint /bin/bash toolbox:latest"
+platforms = ["windows", "unix"]
+
+[commands.docker-clean]
+description = "Remove container and images"
+command = "docker stop toolbox-container 2>/dev/null || true && docker rm toolbox-container 2>/dev/null || true && docker rmi toolbox:latest 2>/dev/null || true"
+platforms = ["windows", "unix"]
+
+
+# Docker Compose Command (with subcommands)
+[commands.d]
+description = "Docker Compose commands (up, down, re, logs)"
+command = "docker-compose"
+platforms = ["windows", "unix"]
+
+[commands.docker-compose-test]
+description = "Start test environment with docker-compose"
+command = "cd devops && docker-compose -f docker-compose.test.yml up -d"
+platforms = ["windows", "unix"]
+
+[commands.docker-compose-test-down]
+description = "Stop test docker-compose services"
+command = "cd devops && docker-compose -f docker-compose.test.yml down"
+platforms = ["windows", "unix"]

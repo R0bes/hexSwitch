@@ -24,3 +24,10 @@ class AdapterConnectionError(AdapterError):
 
     pass
 
+
+class HandlerError(AdapterError):
+    """Raised when handler loading fails."""
+
+    pass
+
+

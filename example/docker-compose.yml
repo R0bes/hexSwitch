@@ -1,0 +1,88 @@
+# Docker Compose for example services
+# Three services communicating with each other:
+# - example1: HTTP Service (port 8000)
+# - example2: gRPC Service (port 50051)
+# - example3: WebSocket/MCP Service (ports 8080, 3000)
+
+name: example-services
+
+services:
+  example1:
+    build:
+      context: services/example1
+      dockerfile: Dockerfile
+    image: ${REGISTRY}/example1:latest
+    container_name: example1
+    ports:
+      - "8000:8000"  # HTTP
+    environment:
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=example1
+    volumes:
+      - ./services/example1/hex-config.yaml:/app/hex-config.yaml:ro
+    networks:
+      - example-network
+    restart: unless-stopped
+    depends_on:
+      example2:
+        condition: service_started
+      example3:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import example_service; print('OK')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  example2:
+    build:
+      context: services/example2
+      dockerfile: Dockerfile
+    image: ${REGISTRY}/example2:latest
+    container_name: example2
+    ports:
+      - "50051:50051"  # gRPC
+    environment:
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=example2
+    volumes:
+      - ./services/example2/hex-config.yaml:/app/hex-config.yaml:ro
+    networks:
+      - example-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import example2_service; print('OK')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  example3:
+    build:
+      context: services/example3
+      dockerfile: Dockerfile
+    image: ${REGISTRY}/example3:latest
+    container_name: example3
+    ports:
+      - "8080:8080"  # WebSocket
+      - "3000:3000"  # MCP
+    environment:
+      - LOG_LEVEL=INFO
+      - SERVICE_NAME=example3
+    volumes:
+      - ./services/example3/hex-config.yaml:/app/hex-config.yaml:ro
+    networks:
+      - example-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import example3_service; print('OK')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  example-network:
+    driver: bridge
+

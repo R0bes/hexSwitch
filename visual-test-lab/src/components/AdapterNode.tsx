@@ -1,5 +1,7 @@
 import { Globe, Database, MessageSquare, Clock, ExternalLink } from 'lucide-react';
-import { mockAdapters, mockAdapterNodes } from '../data/mockAdapters';
+import { mockAdapters } from '../data/mockAdapters';
+import { useConfigurationContext } from '../contexts/ConfigurationContext';
+import { useElementSelectionContext } from '../contexts/ElementSelectionContext';
 
 const iconMap: Record<string, any> = {
   Globe,
@@ -14,10 +16,15 @@ interface AdapterNodeProps {
   x: number;
   y: number;
   isHighlighted?: boolean;
+  onDragStart?: (e: React.MouseEvent, id: string) => void;
+  isDragging?: boolean;
+  dragPosition?: { x: number; y: number } | null;
 }
 
-export default function AdapterNode({ nodeId, x, y, isHighlighted = false }: AdapterNodeProps) {
-  const node = mockAdapterNodes.find(n => n.id === nodeId);
+export default function AdapterNode({ nodeId, x, y, isHighlighted = false, onDragStart, isDragging = false, dragPosition = null }: AdapterNodeProps) {
+  const { adapterNodes } = useConfigurationContext();
+  const { isSelected, toggleSelection } = useElementSelectionContext();
+  const node = adapterNodes.find(n => n.id === nodeId);
   if (!node) return null;
 
   const adapter = mockAdapters.find(a => a.id === node.adapterId);
@@ -30,10 +37,32 @@ export default function AdapterNode({ nodeId, x, y, isHighlighted = false }: Ada
     ? 'var(--accent-magenta)' 
     : 'var(--text-muted)';
   
-  const highlightGlow = isHighlighted ? 'var(--glow-teal)' : (node.status === 'connected' ? 'var(--glow-teal)' : 'none');
+  const isSelectedElement = isSelected('adapter', nodeId);
+  const highlightGlow = isSelectedElement || isHighlighted ? 'var(--glow-teal)' : (node.status === 'connected' ? 'var(--glow-teal)' : 'none');
+  
+  const displayX = isDragging && dragPosition ? dragPosition.x : x;
+  const displayY = isDragging && dragPosition ? dragPosition.y : y;
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleSelection('adapter', nodeId);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 0 && onDragStart) {
+      e.stopPropagation();
+      onDragStart(e, nodeId);
+    }
+  };
 
   return (
-    <g transform={`translate(${x}, ${y})`}>
+    <g 
+      transform={`translate(${displayX}, ${displayY})`} 
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      data-draggable="adapter"
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
       {/* Card shadow */}
       <rect
         x="-60"
@@ -46,18 +75,18 @@ export default function AdapterNode({ nodeId, x, y, isHighlighted = false }: Ada
       />
       
       {/* Highlight ring */}
-      {isHighlighted && (
+      {(isSelectedElement || isHighlighted) && (
         <circle
           cx="0"
           cy="0"
           r="75"
           fill="none"
           stroke="var(--accent-teal)"
-          strokeWidth="3"
-          opacity="0.6"
+          strokeWidth={isSelectedElement ? '4' : '3'}
+          opacity={isSelectedElement ? '0.8' : '0.6'}
           style={{
             filter: 'blur(4px)',
-            animation: 'pulse-glow 2s ease-in-out infinite'
+            animation: isSelectedElement ? 'pulse-glow 2s ease-in-out infinite' : 'none'
           }}
         />
       )}
@@ -69,9 +98,9 @@ export default function AdapterNode({ nodeId, x, y, isHighlighted = false }: Ada
         width="120"
         height="70"
         rx="6"
-        fill={isHighlighted ? 'var(--bg-tertiary)' : 'var(--bg-secondary)'}
-        stroke={adapter.type === 'inbound' ? 'var(--accent-inbound)' : 'var(--accent-outbound)'}
-        strokeWidth={isHighlighted ? '2.5' : '1.5'}
+        fill={isSelectedElement || isHighlighted ? 'var(--bg-tertiary)' : 'var(--bg-secondary)'}
+        stroke={isSelectedElement ? 'var(--accent-teal)' : (adapter.type === 'inbound' ? 'var(--accent-inbound)' : 'var(--accent-outbound)')}
+        strokeWidth={isSelectedElement ? '3' : (isHighlighted ? '2.5' : '1.5')}
         style={{
           filter: highlightGlow
         }}

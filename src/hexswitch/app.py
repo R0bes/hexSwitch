@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from hexswitch import __version__
-from hexswitch.config import (
+from hexswitch.shared.config import (
     DEFAULT_CONFIG_PATH,
     ConfigError,
     get_example_config,

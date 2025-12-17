@@ -1,0 +1,57 @@
+service:
+  name: example3
+  runtime: python
+
+# Inbound adapters - WebSocket and MCP
+inbound:
+  websocket:
+    enabled: true
+    port: 8080
+    path: /ws
+    routes:
+      - path: /examples
+        handler: example3_service.application.handlers.websocket_handlers:websocket_message_handler
+      - path: /call/example1
+        handler: example3_service.application.handlers.websocket_handlers:call_example1_handler
+      - path: /call/example2
+        handler: example3_service.application.handlers.websocket_handlers:call_example2_handler
+
+  mcp:
+    enabled: true
+    port: 3000
+    methods:
+      - method_name: initialize
+        handler: example3_service.application.handlers.mcp_handlers:mcp_initialize_handler
+      - method_name: tools/list
+        handler: example3_service.application.handlers.mcp_handlers:mcp_tools_list_handler
+      - method_name: tools/call
+        handler: example3_service.application.handlers.mcp_handlers:mcp_tools_call_handler
+      - method_name: resources/list
+        handler: example3_service.application.handlers.mcp_handlers:mcp_resources_list_handler
+      - method_name: resources/read
+        handler: example3_service.application.handlers.mcp_handlers:mcp_resources_read_handler
+
+# Outbound adapters - to communicate with other services
+outbound:
+  http_client:
+    enabled: true
+    name: example1_http
+    base_url: http://example1:8000
+    timeout: 30
+    headers:
+      Content-Type: application/json
+    ports:
+      - example1_http_port
+
+  grpc_client:
+    enabled: true
+    name: example2_grpc
+    server_url: example2:50051
+    timeout: 30
+    service_name: ExampleService
+    ports:
+      - example2_grpc_port
+
+logging:
+  level: INFO
+

@@ -1,9 +1,19 @@
-"""Handler system for HexSwitch."""
+"""Default handlers for HexSwitch framework.
 
-from hexswitch.handlers.loader import HandlerError, load_handler
+Import this module to auto-register health and metrics endpoints.
+"""
+
+from hexswitch.handlers.health import (
+    health_handler,
+    readiness_handler,
+    liveness_handler
+)
+from hexswitch.handlers.metrics import metrics_handler
 
 __all__ = [
-    "load_handler",
-    "HandlerError",
+    "health_handler",
+    "readiness_handler",
+    "liveness_handler",
+    "metrics_handler",
 ]
 

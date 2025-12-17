@@ -1,0 +1,1 @@
+führe ein tool vom mcp-server workflow-manager aus. wenn kein bestimmtes angegeben ist, check alle workflows und liste sie dem user übersichtlich auf.

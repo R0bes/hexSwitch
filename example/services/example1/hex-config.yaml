@@ -1,0 +1,57 @@
+service:
+  name: example1
+  runtime: python
+
+# Inbound adapters - HTTP only
+inbound:
+  http:
+    enabled: true
+    port: 8000
+    base_path: /api
+    routes:
+      - path: /examples
+        method: GET
+        handler: example_service.application.handlers.http_handlers:get_example_handler
+      - path: /examples/:id
+        method: GET
+        handler: example_service.application.handlers.http_handlers:get_example_handler
+      - path: /examples
+        method: POST
+        handler: example_service.application.handlers.http_handlers:create_example_handler
+      - path: /examples/:id
+        method: PUT
+        handler: example_service.application.handlers.http_handlers:update_example_handler
+      - path: /examples/:id
+        method: DELETE
+        handler: example_service.application.handlers.http_handlers:delete_example_handler
+      # Inter-service communication endpoints
+      - path: /call/example2
+        method: POST
+        handler: example_service.application.handlers.http_handlers:call_example2_handler
+      - path: /call/example3
+        method: POST
+        handler: example_service.application.handlers.http_handlers:call_example3_handler
+
+# Outbound adapters - to communicate with other services
+outbound:
+  grpc_client:
+    enabled: true
+    name: example2_grpc
+    server_url: example2:50051
+    timeout: 30
+    service_name: ExampleService
+    ports:
+      - example2_grpc_port
+
+  websocket_client:
+    enabled: true
+    name: example3_ws
+    url: ws://example3:8080
+    timeout: 30
+    reconnect: true
+    reconnect_interval: 5
+    ports:
+      - example3_ws_port
+
+logging:
+  level: INFO

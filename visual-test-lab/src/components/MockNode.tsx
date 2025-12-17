@@ -1,5 +1,6 @@
 import { Server, Database, MessageSquare, Globe } from 'lucide-react';
-import { mockMockNodes } from '../data/mockAdapters';
+import { useConfigurationContext } from '../contexts/ConfigurationContext';
+import { useElementSelectionContext } from '../contexts/ElementSelectionContext';
 
 const iconMap: Record<string, any> = {
   http: Globe,
@@ -13,10 +14,15 @@ interface MockNodeProps {
   x: number;
   y: number;
   isHighlighted?: boolean;
+  onDragStart?: (e: React.MouseEvent, id: string) => void;
+  isDragging?: boolean;
+  dragPosition?: { x: number; y: number } | null;
 }
 
-export default function MockNode({ mockId, x, y, isHighlighted = false }: MockNodeProps) {
-  const mock = mockMockNodes.find(m => m.id === mockId);
+export default function MockNode({ mockId, x, y, isHighlighted = false, onDragStart, isDragging = false, dragPosition = null }: MockNodeProps) {
+  const { mockNodes } = useConfigurationContext();
+  const { isSelected, toggleSelection } = useElementSelectionContext();
+  const mock = mockNodes.find(m => m.id === mockId);
   if (!mock) return null;
 
   const Icon = iconMap[mock.type] || Globe;
@@ -24,23 +30,45 @@ export default function MockNode({ mockId, x, y, isHighlighted = false }: MockNo
   const baseColor = mock.direction === 'inbound' 
     ? 'var(--accent-inbound-dark)' 
     : 'var(--accent-outbound-dark)';
-  const mockColor = isHighlighted ? 'var(--accent-teal)' : baseColor;
+  const isSelectedElement = isSelected('mock', mockId);
+  const mockColor = isSelectedElement || isHighlighted ? 'var(--accent-teal)' : baseColor;
+  
+  const displayX = isDragging && dragPosition ? dragPosition.x : x;
+  const displayY = isDragging && dragPosition ? dragPosition.y : y;
+  
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleSelection('mock', mockId);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 0 && onDragStart) {
+      e.stopPropagation();
+      onDragStart(e, mockId);
+    }
+  };
 
   return (
-    <g transform={`translate(${x}, ${y})`}>
+    <g 
+      transform={`translate(${displayX}, ${displayY})`} 
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      data-draggable="mock"
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
       {/* Highlight ring */}
-      {isHighlighted && (
+      {(isSelectedElement || isHighlighted) && (
         <circle
           cx="0"
           cy="0"
           r="85"
           fill="none"
           stroke="var(--accent-teal)"
-          strokeWidth="3"
-          opacity="0.6"
+          strokeWidth={isSelectedElement ? '4' : '3'}
+          opacity={isSelectedElement ? '0.8' : '0.6'}
           style={{
             filter: 'blur(4px)',
-            animation: 'pulse-glow 2s ease-in-out infinite'
+            animation: isSelectedElement ? 'pulse-glow 2s ease-in-out infinite' : 'none'
           }}
         />
       )}
@@ -63,12 +91,12 @@ export default function MockNode({ mockId, x, y, isHighlighted = false }: MockNo
         width="140"
         height="80"
         rx="8"
-        fill={isHighlighted ? 'var(--bg-secondary)' : 'var(--bg-tertiary)'}
+        fill={isSelectedElement || isHighlighted ? 'var(--bg-secondary)' : 'var(--bg-tertiary)'}
         stroke={mockColor}
-        strokeWidth={isHighlighted ? '3' : '2'}
+        strokeWidth={isSelectedElement ? '4' : (isHighlighted ? '3' : '2')}
         strokeDasharray="4,4"
         style={{
-          filter: isHighlighted 
+          filter: isSelectedElement || isHighlighted
             ? 'drop-shadow(0 0 12px rgba(0, 245, 255, 0.6))'
             : mock.direction === 'inbound'
             ? 'drop-shadow(var(--glow-inbound-dark))'

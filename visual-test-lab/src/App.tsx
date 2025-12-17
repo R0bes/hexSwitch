@@ -5,8 +5,14 @@ import AdapterLibrary from './components/AdapterLibrary';
 import HexagonalCanvas from './components/HexagonalCanvas';
 import LogsPanel from './components/LogsPanel';
 import ScenarioTimeline from './components/ScenarioTimeline';
+import ConfigurationPanel from './components/ConfigurationPanel';
+import ScenarioReport from './components/ScenarioReport';
+import RuntimeLoader from './components/runtime/RuntimeLoader';
 import { mockScenarios } from './data/mockScenarios';
 import { useDataFlow } from './hooks/useDataFlow';
+import { useElementSelectionContext } from './contexts/ElementSelectionContext';
+import { useScenarioReport } from './hooks/useScenarioReport';
+import type { RuntimeType } from './types/runtime';
 
 function App() {
   const [selectedScenario, setSelectedScenario] = useState(mockScenarios[0].id);
@@ -14,12 +20,33 @@ function App() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selectedAdapterId, setSelectedAdapterId] = useState<string | null>(null);
   const [isLogsPanelOpen, setIsLogsPanelOpen] = useState(true);
+  const [isAdapterLibraryOpen, setIsAdapterLibraryOpen] = useState(true);
+  const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [runtimeType, setRuntimeType] = useState<RuntimeType>('mock');
   const { pulses, triggerPulse, clearPulses } = useDataFlow();
+  const { selectedElement, clearSelection } = useElementSelectionContext();
+
+  const currentScenario = mockScenarios.find(s => s.id === selectedScenario);
+  const scenarioReport = useScenarioReport({
+    scenarioId: selectedScenario,
+    scenarioName: currentScenario?.name || 'Unknown',
+    totalSteps: currentScenario?.steps.length || 0
+  });
+
+  // Open config panel when element is selected
+  useEffect(() => {
+    if (selectedElement) {
+      setIsConfigPanelOpen(true);
+    }
+  }, [selectedElement]);
 
   const handleRunScenario = () => {
     setIsRunning(true);
     setCurrentStepIndex(0);
     clearPulses();
+    scenarioReport.clearReport();
+    scenarioReport.startCollection();
     
     // Simulate scenario execution - advance steps
     const scenario = mockScenarios.find(s => s.id === selectedScenario);
@@ -28,6 +55,15 @@ function App() {
     // Trigger data flow pulses based on scenario steps - SEQUENTIALLY (cascading)
     scenario.steps.forEach((step, index) => {
       const stepStartTime = index * 2000; // More time between steps to allow cascading
+      
+      // Record step start
+      scenarioReport.recordStepStart(step.id, step.name);
+      scenarioReport.recordLog({
+        level: 'INFO',
+        source: 'Scenario Runner',
+        message: `Starting step: ${step.name}`,
+        stepId: step.id
+      });
       
       setTimeout(() => {
         // Determine step type from name/icon
@@ -82,8 +118,36 @@ function App() {
       }, stepStartTime);
     });
     
+    let completedSteps = 0;
+    let failedSteps = 0;
+    
     const interval = setInterval(() => {
       setCurrentStepIndex(prev => {
+        const currentStep = scenario.steps[prev];
+        if (currentStep) {
+          // Record step completion
+          const status = currentStep.status === 'error' ? 'error' : 'success';
+          scenarioReport.recordStepEnd(currentStep.id, status);
+          scenarioReport.recordLog({
+            level: status === 'error' ? 'ERROR' : 'INFO',
+            source: 'Scenario Runner',
+            message: `Step completed: ${currentStep.name}`,
+            stepId: currentStep.id
+          });
+          
+          if (status === 'error') {
+            failedSteps++;
+            scenarioReport.recordError({
+              stepId: currentStep.id,
+              stepName: currentStep.name,
+              message: `Step failed: ${currentStep.name}`,
+              source: 'Scenario Runner'
+            });
+          } else {
+            completedSteps++;
+          }
+        }
+        
         if (prev >= scenario.steps.length - 1) {
           clearInterval(interval);
           setIsRunning(false);
@@ -100,6 +164,12 @@ function App() {
       setIsRunning(false);
       setCurrentStepIndex(0);
       clearPulses();
+      
+      // Generate and show report
+      const report = scenarioReport.generateReport(completedSteps, failedSteps);
+      if (report) {
+        setShowReport(true);
+      }
     }, totalDuration);
   };
 
@@ -109,7 +179,10 @@ function App() {
     setIsRunning(false);
   }, [selectedScenario]);
 
-  const timelineHeight = '80px';
+  const timelineHeight = '120px'; // Increased to prevent icon clipping
+  const adapterLibraryWidth = '250px';
+  const logsPanelWidth = '300px';
+  const configPanelWidth = '350px';
 
   return (
     <div style={{
@@ -117,30 +190,85 @@ function App() {
       height: '100vh',
       display: 'grid',
       gridTemplateRows: `60px 1fr ${timelineHeight}`,
-      gridTemplateColumns: '250px 1fr auto',
+      gridTemplateColumns: `${isAdapterLibraryOpen ? adapterLibraryWidth : '0px'} 1fr ${isLogsPanelOpen ? logsPanelWidth : '0px'} ${isConfigPanelOpen ? configPanelWidth : '0px'}`,
       background: 'var(--bg-primary)',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      transition: 'grid-template-columns var(--transition-normal)'
     }}>
       {/* TopBar - spans full width */}
       <div style={{ gridColumn: '1 / -1' }}>
-        <TopBar
-          selectedScenario={selectedScenario}
-          onScenarioChange={setSelectedScenario}
-          onRunScenario={handleRunScenario}
-        />
+        <TopBar />
       </div>
 
       {/* Left Sidebar - Adapter Library */}
       <div style={{
         gridColumn: '1',
         gridRow: '2',
+        position: 'relative',
         borderRight: '1px solid var(--border-color)',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        width: isAdapterLibraryOpen ? adapterLibraryWidth : '0px',
+        transition: 'width var(--transition-normal)'
       }}>
-        <AdapterLibrary 
-          selectedAdapterId={selectedAdapterId}
-          onAdapterSelect={setSelectedAdapterId}
-        />
+        {isAdapterLibraryOpen && (
+          <AdapterLibrary 
+            selectedAdapterId={selectedAdapterId}
+            onAdapterSelect={setSelectedAdapterId}
+          />
+        )}
+      </div>
+
+      {/* Toggle Button for Adapter Library - separate container that's always visible */}
+      <div style={{
+        gridColumn: '1',
+        gridRow: '2',
+        position: 'relative',
+        pointerEvents: 'none',
+        zIndex: 1001
+      }}>
+        <button
+          onClick={() => setIsAdapterLibraryOpen(!isAdapterLibraryOpen)}
+          style={{
+            position: 'absolute',
+            left: isAdapterLibraryOpen ? '-28px' : '0px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '28px',
+            height: '64px',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            borderLeft: isAdapterLibraryOpen ? 'none' : '1px solid var(--border-color)',
+            borderRight: isAdapterLibraryOpen ? '1px solid var(--border-color)' : 'none',
+            borderTopLeftRadius: isAdapterLibraryOpen ? 'var(--radius-md)' : '0',
+            borderBottomLeftRadius: isAdapterLibraryOpen ? 'var(--radius-md)' : '0',
+            borderTopRightRadius: isAdapterLibraryOpen ? '0' : 'var(--radius-md)',
+            borderBottomRightRadius: isAdapterLibraryOpen ? '0' : 'var(--radius-md)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--text-primary)',
+            pointerEvents: 'auto',
+            transition: 'all var(--transition-normal)',
+            boxShadow: 'var(--shadow-md)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--bg-tertiary)';
+            e.currentTarget.style.borderColor = 'var(--accent-teal)';
+            e.currentTarget.style.boxShadow = 'var(--glow-teal)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--bg-secondary)';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+          }}
+        >
+          {isAdapterLibraryOpen ? (
+            <ChevronLeft size={18} />
+          ) : (
+            <ChevronRight size={18} />
+          )}
+        </button>
       </div>
 
       {/* Center - Hexagonal Canvas */}
@@ -160,6 +288,10 @@ function App() {
           selectedAdapterId={selectedAdapterId} 
           activePulses={pulses}
         />
+        <RuntimeLoader
+          runtimeType={runtimeType}
+          onRuntimeTypeChange={setRuntimeType}
+        />
       </div>
 
       {/* Right Sidebar - Logs Panel */}
@@ -169,10 +301,28 @@ function App() {
         position: 'relative',
         borderLeft: '1px solid var(--border-color)',
         overflow: 'hidden',
-        width: isLogsPanelOpen ? '300px' : '0px',
+        width: isLogsPanelOpen ? logsPanelWidth : '0px',
         transition: 'width var(--transition-normal)'
       }}>
         {isLogsPanelOpen && <LogsPanel />}
+      </div>
+      
+      {/* Configuration Panel */}
+      <div style={{
+        gridColumn: '4',
+        gridRow: '2',
+        position: 'relative',
+        borderLeft: '1px solid var(--border-color)',
+        overflow: 'hidden',
+        width: isConfigPanelOpen ? configPanelWidth : '0px',
+        transition: 'width var(--transition-normal)'
+      }}>
+        {isConfigPanelOpen && (
+          <ConfigurationPanel onClose={() => {
+            setIsConfigPanelOpen(false);
+            clearSelection();
+          }} />
+        )}
       </div>
       
       {/* Toggle Button for Logs Panel - separate container that's always visible */}
@@ -187,9 +337,9 @@ function App() {
           onClick={() => setIsLogsPanelOpen(!isLogsPanelOpen)}
           style={{
             position: 'absolute',
-            right: isLogsPanelOpen ? '-28px' : '0px',
+            right: '0px',
             top: '50%',
-            transform: 'translateY(-50%)',
+            transform: isLogsPanelOpen ? 'translateY(-50%) scaleY(-1)' : 'translateY(-50%)',
             width: '28px',
             height: '64px',
             background: 'var(--bg-secondary)',
@@ -228,6 +378,57 @@ function App() {
         </button>
       </div>
 
+      {/* Toggle Button for Config Panel */}
+      {isConfigPanelOpen && (
+        <div style={{
+          gridColumn: '4',
+          gridRow: '2',
+          position: 'relative',
+          pointerEvents: 'none',
+          zIndex: 1001
+        }}>
+          <button
+            onClick={() => {
+              setIsConfigPanelOpen(false);
+              clearSelection();
+            }}
+            style={{
+              position: 'absolute',
+              right: '-28px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '28px',
+              height: '64px',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRight: 'none',
+              borderTopLeftRadius: 'var(--radius-md)',
+              borderBottomLeftRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-primary)',
+              pointerEvents: 'auto',
+              transition: 'all var(--transition-normal)',
+              boxShadow: 'var(--shadow-md)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-tertiary)';
+              e.currentTarget.style.borderColor = 'var(--accent-teal)';
+              e.currentTarget.style.boxShadow = 'var(--glow-teal)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--bg-secondary)';
+              e.currentTarget.style.borderColor = 'var(--border-color)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+            }}
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
+
       {/* Bottom - Scenario Timeline */}
       <div style={{
         gridColumn: '1 / -1',
@@ -239,8 +440,18 @@ function App() {
           scenarioId={selectedScenario}
           isRunning={isRunning}
           currentStepIndex={currentStepIndex}
+          onScenarioChange={setSelectedScenario}
+          onRunScenario={handleRunScenario}
         />
       </div>
+
+      {/* Report Modal */}
+      {showReport && scenarioReport.report && (
+        <ScenarioReport
+          report={scenarioReport.report}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </div>
   );
 }

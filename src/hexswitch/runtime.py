@@ -2,12 +2,20 @@
 
 import logging
 import signal
-import sys
 from typing import Any
 
-from hexswitch.adapters.base import InboundAdapter, OutboundAdapter
 from hexswitch.adapters.exceptions import AdapterError
-from hexswitch.adapters.http import HttpAdapter
+from hexswitch.adapters.grpc import GrpcAdapterServer, GrpcAdapterClient
+from hexswitch.adapters.http import FastApiHttpAdapterServer, HttpAdapterClient
+from hexswitch.adapters.base import InboundAdapter, OutboundAdapter
+from hexswitch.adapters.mcp import McpAdapterServer, McpAdapterClient
+from hexswitch.adapters.websocket import WebSocketAdapterServer, WebSocketAdapterClient
+from hexswitch.ports.registry import get_port_registry
+from hexswitch.shared.observability import (
+    get_global_metrics_collector,
+    get_global_tracer,
+    start_span,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +108,18 @@ class Runtime:
         self.outbound_adapters: list[OutboundAdapter] = []
         self._shutdown_requested = False
 
+        # Initialize observability
+        self._tracer = get_global_tracer()
+        self._metrics = get_global_metrics_collector()
+
+        # Runtime metrics
+        self._runtime_start_time: float | None = None
+        self._adapter_start_counter = self._metrics.counter("runtime_adapter_starts_total")
+        self._adapter_stop_counter = self._metrics.counter("runtime_adapter_stops_total")
+        self._adapter_error_counter = self._metrics.counter("runtime_adapter_errors_total")
+        self._active_adapters_gauge = self._metrics.gauge("runtime_active_adapters")
+        self._adapter_start_duration = self._metrics.histogram("runtime_adapter_start_duration_seconds")
+
     def _create_inbound_adapter(self, name: str, adapter_config: dict[str, Any]) -> InboundAdapter:
         """Create an inbound adapter instance.
 
@@ -114,7 +134,13 @@ class Runtime:
             ValueError: If adapter type is not supported.
         """
         if name == "http":
-            return HttpAdapter(name, adapter_config)
+            return FastApiHttpAdapterServer(name, adapter_config)
+        elif name == "grpc":
+            return GrpcAdapterServer(name, adapter_config)
+        elif name == "websocket":
+            return WebSocketAdapterServer(name, adapter_config)
+        elif name == "mcp":
+            return McpAdapterServer(name, adapter_config)
         else:
             raise ValueError(f"Unsupported inbound adapter type: {name}")
 
@@ -133,7 +159,16 @@ class Runtime:
         Raises:
             ValueError: If adapter type is not supported.
         """
-        raise ValueError(f"Unsupported outbound adapter type: {name}")
+        if name == "http_client":
+            return HttpAdapterClient(name, adapter_config)
+        elif name == "mcp_client":
+            return McpAdapterClient(name, adapter_config)
+        elif name == "grpc_client":
+            return GrpcAdapterClient(name, adapter_config)
+        elif name == "websocket_client":
+            return WebSocketAdapterClient(name, adapter_config)
+        else:
+            raise ValueError(f"Unsupported outbound adapter type: {name}")
 
     def start(self) -> None:
         """Start all enabled adapters.
@@ -141,59 +176,154 @@ class Runtime:
         Raises:
             RuntimeError: If adapter startup fails.
         """
-        plan = build_execution_plan(self.config)
+        import time
 
-        # Start inbound adapters
-        for adapter_info in plan["inbound_adapters"]:
-            try:
-                adapter = self._create_inbound_adapter(
-                    adapter_info["name"], adapter_info["config"]
+        span = start_span("runtime.start", tags={"service": self.config.get("service", {}).get("name", "unknown")})
+        self._runtime_start_time = time.time()
+
+        try:
+            plan = build_execution_plan(self.config)
+
+            # Start inbound adapters
+            for adapter_info in plan["inbound_adapters"]:
+                adapter_span = start_span(
+                    f"adapter.start",
+                    parent=span,
+                    tags={"adapter": adapter_info["name"], "type": "inbound"},
                 )
-                adapter.start()
-                self.inbound_adapters.append(adapter)
-                logger.info(f"Started inbound adapter: {adapter_info['name']}")
-            except Exception as e:
-                logger.error(f"Failed to start inbound adapter '{adapter_info['name']}': {e}")
-                raise RuntimeError(f"Failed to start adapter '{adapter_info['name']}'") from e
+                start_time = time.time()
+                try:
+                    inbound_adapter: InboundAdapter = self._create_inbound_adapter(
+                        adapter_info["name"], adapter_info["config"]
+                    )
+                    inbound_adapter.start()
+                    self.inbound_adapters.append(inbound_adapter)
+                    duration = time.time() - start_time
+                    self._adapter_start_duration.observe(duration)
+                    self._adapter_start_counter.inc()
+                    self._active_adapters_gauge.set(len(self.inbound_adapters) + len(self.outbound_adapters))
+                    adapter_span.add_tag("status", "success")
+                    logger.info(f"Started inbound adapter: {adapter_info['name']}")
+                except Exception as e:
+                    self._adapter_error_counter.inc()
+                    adapter_span.add_tag("status", "error")
+                    adapter_span.add_tag("error", str(e))
+                    logger.error(f"Failed to start inbound adapter '{adapter_info['name']}': {e}")
+                    raise RuntimeError(f"Failed to start adapter '{adapter_info['name']}'") from e
+                finally:
+                    adapter_span.finish()
 
-        # Start outbound adapters
-        for adapter_info in plan["outbound_adapters"]:
-            try:
-                adapter = self._create_outbound_adapter(
-                    adapter_info["name"], adapter_info["config"]
+            # Start outbound adapters and bind to ports
+            port_registry = get_port_registry()
+            for adapter_info in plan["outbound_adapters"]:
+                adapter_span = start_span(
+                    f"adapter.connect",
+                    parent=span,
+                    tags={"adapter": adapter_info["name"], "type": "outbound"},
                 )
-                adapter.connect()
-                self.outbound_adapters.append(adapter)
-                logger.info(f"Started outbound adapter: {adapter_info['name']}")
-            except Exception as e:
-                logger.error(f"Failed to start outbound adapter '{adapter_info['name']}': {e}")
-                raise RuntimeError(f"Failed to start adapter '{adapter_info['name']}'") from e
+                start_time = time.time()
+                try:
+                    adapter: OutboundAdapter = self._create_outbound_adapter(
+                        adapter_info["name"], adapter_info["config"]
+                    )
+                    adapter.connect()
+                    self.outbound_adapters.append(adapter)
+                    
+                    # Bind adapter to outbound ports (if configured)
+                    adapter_config = adapter_info["config"]
+                    port_names = adapter_config.get("ports", [])
+                    if isinstance(port_names, str):
+                        port_names = [port_names]
+                    
+                    for port_name in port_names:
+                        try:
+                            # Register handler that routes through the adapter
+                            def create_adapter_handler(adapter_instance: OutboundAdapter):
+                                def handler(envelope):
+                                    return adapter_instance.request(envelope)
+                                return handler
+                            
+                            handler = create_adapter_handler(adapter)
+                            port_registry.register_handler(port_name, handler)
+                            logger.info(f"Bound outbound adapter '{adapter_info['name']}' to port '{port_name}'")
+                        except Exception as e:
+                            logger.warning(f"Failed to bind adapter to port '{port_name}': {e}")
+                    
+                    duration = time.time() - start_time
+                    self._adapter_start_duration.observe(duration)
+                    self._adapter_start_counter.inc()
+                    self._active_adapters_gauge.set(len(self.inbound_adapters) + len(self.outbound_adapters))
+                    adapter_span.add_tag("status", "success")
+                    logger.info(f"Started outbound adapter: {adapter_info['name']}")
+                except Exception as e:
+                    self._adapter_error_counter.inc()
+                    adapter_span.add_tag("status", "error")
+                    adapter_span.add_tag("error", str(e))
+                    logger.error(f"Failed to start outbound adapter '{adapter_info['name']}': {e}")
+                    raise RuntimeError(f"Failed to start adapter '{adapter_info['name']}'") from e
+                finally:
+                    adapter_span.finish()
 
-        logger.info("All adapters started successfully")
+            adapters_count = len(self.inbound_adapters) + len(self.outbound_adapters)
+            span.add_tag("adapters_started", str(adapters_count))
+            logger.info("All adapters started successfully")
+        finally:
+            span.finish()
 
     def stop(self) -> None:
         """Stop all adapters gracefully."""
+        span = start_span("runtime.stop")
         logger.info("Stopping runtime...")
 
-        # Stop inbound adapters
-        for adapter in self.inbound_adapters:
-            try:
-                adapter.stop()
-                logger.info(f"Stopped inbound adapter: {adapter.name}")
-            except AdapterError as e:
-                logger.error(f"Error stopping inbound adapter '{adapter.name}': {e}")
+        try:
+            # Stop inbound adapters
+            for inbound_adapter in self.inbound_adapters:
+                adapter_span = start_span(
+                    "adapter.stop",
+                    parent=span,
+                    tags={"adapter": inbound_adapter.name, "type": "inbound"},
+                )
+                try:
+                    inbound_adapter.stop()
+                    self._adapter_stop_counter.inc()
+                    self._active_adapters_gauge.set(len(self.inbound_adapters) + len(self.outbound_adapters) - 1)
+                    adapter_span.add_tag("status", "success")
+                    logger.info(f"Stopped inbound adapter: {inbound_adapter.name}")
+                except AdapterError as e:
+                    self._adapter_error_counter.inc()
+                    adapter_span.add_tag("status", "error")
+                    adapter_span.add_tag("error", str(e))
+                    logger.error(f"Error stopping inbound adapter '{inbound_adapter.name}': {e}")
+                finally:
+                    adapter_span.finish()
 
-        # Disconnect outbound adapters
-        for adapter in self.outbound_adapters:
-            try:
-                adapter.disconnect()
-                logger.info(f"Disconnected outbound adapter: {adapter.name}")
-            except AdapterError as e:
-                logger.error(f"Error disconnecting outbound adapter '{adapter.name}': {e}")
+            # Disconnect outbound adapters
+            for outbound_adapter in self.outbound_adapters:
+                adapter_span = start_span(
+                    "adapter.disconnect",
+                    parent=span,
+                    tags={"adapter": outbound_adapter.name, "type": "outbound"},
+                )
+                try:
+                    outbound_adapter.disconnect()
+                    self._adapter_stop_counter.inc()
+                    self._active_adapters_gauge.set(len(self.inbound_adapters) + len(self.outbound_adapters) - 1)
+                    adapter_span.add_tag("status", "success")
+                    logger.info(f"Disconnected outbound adapter: {outbound_adapter.name}")
+                except AdapterError as e:
+                    self._adapter_error_counter.inc()
+                    adapter_span.add_tag("status", "error")
+                    adapter_span.add_tag("error", str(e))
+                    logger.error(f"Error disconnecting outbound adapter '{outbound_adapter.name}': {e}")
+                finally:
+                    adapter_span.finish()
 
-        self.inbound_adapters.clear()
-        self.outbound_adapters.clear()
-        logger.info("Runtime stopped")
+            self.inbound_adapters.clear()
+            self.outbound_adapters.clear()
+            self._active_adapters_gauge.set(0)
+            logger.info("Runtime stopped")
+        finally:
+            span.finish()
 
     def run(self) -> None:
         """Run the runtime event loop (blocking).
@@ -243,5 +373,3 @@ def run_runtime(config: dict[str, Any]) -> None:
         logger.error(f"Runtime error: {e}")
         runtime.stop()
         raise RuntimeError(f"Runtime execution failed: {e}") from e
-
-

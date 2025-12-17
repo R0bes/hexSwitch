@@ -1,0 +1,84 @@
+---
+alwaysApply: true
+---
+
+# File Size Management
+
+## Principle
+
+Files should not become too large. Agents must monitor file sizes continuously, not just when adding new code.
+
+## Guidelines
+
+### Size Monitoring
+
+- **Always check file size** before and after making changes
+- A file can become too large even if you only added a small amount of code
+- Monitor the total line count and complexity of files you work with
+
+### Size Thresholds
+
+- **React/TypeScript Components**: Generally should stay under 300-400 lines
+- **Utility/Helper Files**: Should stay under 500 lines
+- **Configuration Files**: Use reasonable limits based on maintainability
+
+### File Organization and Grouping
+
+**Related files MUST be grouped in directories.** This significantly improves overview and maintainability, especially for humans.
+
+- **Group logically related files** into subdirectories
+- Examples from this project:
+  - `components/configuration/` - Configuration-related components
+  - `components/report/` - Report-related components
+- When creating new related files, organize them in appropriate subdirectories
+- If multiple files share a common purpose or domain, create a dedicated directory for them
+- This applies to:
+  - Components that work together (e.g., form components, report components)
+  - Utilities with related functionality
+  - Types/interfaces that belong to a specific domain
+  - Tests for a specific module
+
+### When Files Become Too Large
+
+1. **Proactive Refactoring**: If a file is approaching or exceeding size limits, consider refactoring:
+   - Extract sub-components into separate files
+   - Move utility functions to dedicated utility files
+   - Split large components into smaller, focused components
+   - Extract hooks or context providers into separate files
+   - **Group extracted files in appropriate subdirectories**
+
+2. **Agent Autonomy**: Agents can make independent decisions for:
+   - Extracting small, self-contained elements (e.g., a helper function, a small sub-component)
+   - Moving clearly separable logic into dedicated files
+   - Minor organizational improvements
+   - Creating subdirectories for related files when the grouping is clear and logical
+
+3. **When to Ask**: Agents should ask for guidance when:
+   - The refactoring affects multiple files or architectural decisions
+   - The change impacts the overall project structure
+   - There's uncertainty about the best approach
+   - The refactoring is substantial and might affect other parts of the codebase
+   - There's uncertainty about how to group files or which directory structure to use
+
+### Best Practices
+
+- **Early Detection**: Check file sizes regularly, not just at the end of a task
+- **Incremental Refactoring**: Don't wait until a file is unmanageable - refactor incrementally
+- **Logical Grouping**: When extracting code, consider if it belongs with other related files in a subdirectory
+- **Documentation**: When extracting code, ensure proper documentation and imports
+- **Testing**: After refactoring, verify that functionality remains intact
+
+### Example Scenarios
+
+✅ **Good - Independent Decision**: Extracting a small utility function (10-20 lines) into a separate file when the current file is already 350+ lines.
+
+✅ **Good - Independent Decision**: Splitting a large component into a main component and 2-3 smaller sub-components when the file exceeds 400 lines, and organizing them in a subdirectory if they're related.
+
+✅ **Good - Independent Decision**: Creating a `components/forms/` directory when extracting multiple form-related components from a large file.
+
+❓ **Should Ask**: Refactoring a core component that is used throughout the application and might require updating multiple imports and tests.
+
+❓ **Should Ask**: Deciding between multiple architectural approaches for organizing a large codebase section.
+
+❓ **Should Ask**: When uncertain about the best directory structure for grouping related files.
+

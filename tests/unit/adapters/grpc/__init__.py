@@ -1,0 +1,2 @@
+"""gRPC adapter specific tests."""
+

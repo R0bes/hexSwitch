@@ -1,0 +1,1 @@
+führe ein tool vom mcp-server templatemanager aus. wenn kein bestimmtes angegeben ist, check alle tools und alle templates und liste sie dem user übersichtlich und gruppiert auf.

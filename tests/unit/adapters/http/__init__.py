@@ -1,0 +1,2 @@
+"""HTTP adapter specific tests."""
+

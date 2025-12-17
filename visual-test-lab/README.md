@@ -1,6 +1,63 @@
+<div align="center">
+  <img src="../assets/logo.png" alt="HexSwitch Logo" width="200" />
+</div>
+
 # HexSwitch Visual Test Lab
 
 A visual, interactive web application for testing and visualizing hexagonal architecture services. This is a standalone browser-based tool with a dark mode, cyberpunk-inspired design.
+
+## HexSwitch Reference
+
+This Visual Test Lab is designed to visualize and test **hexSwitch** configurations.
+
+### Real hexSwitch Implementation
+
+The lab references the real hexSwitch implementation located in:
+- **Source Code**: `../src/hexswitch/` (read-only reference)
+- **Docker Image**: `../devops/Dockerfile` - Build with: `docker build -f devops/Dockerfile -t hexswitch:latest .`
+- **Configuration**: `../hex-config.yaml` - Example configuration file
+- **CLI**: Use `hexswitch` commands to validate and run configurations
+
+### Real Adapters
+
+Currently implemented in hexSwitch:
+- **Inbound**: `http` (src/hexswitch/adapters/http/adapter.py)
+- **Outbound**: `http_client` (src/hexswitch/adapters/http_client/adapter.py)
+- **Outbound**: `mcp_client` (src/hexswitch/adapters/mcp_client/adapter.py)
+
+See `src/data/hexSwitchReference.ts` for detailed adapter specifications.
+
+### Configuration Format
+
+The lab supports the real hexSwitch configuration format:
+```yaml
+service:
+  name: example-service
+  runtime: python
+
+inbound:
+  http:
+    enabled: true
+    base_path: /api
+    routes:
+      - path: /hello
+        method: GET
+        handler: adapters.http_handlers:hello
+
+outbound:
+  http_client:
+    enabled: true
+    base_url: https://api.example.com
+    timeout: 30
+```
+
+### Integration
+
+To use real hexSwitch configurations:
+1. Load a `hex-config.yaml` file
+2. The lab will parse and visualize the configuration
+3. Use the real hexSwitch CLI to validate: `hexswitch validate`
+4. Run with Docker: `docker run --rm hexswitch:latest hexswitch run`
 
 ## Features
 

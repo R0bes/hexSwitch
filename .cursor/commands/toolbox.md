@@ -1,0 +1,1 @@
+führe ein tool vom mcp-server toolbox aus. wenn kein bestimmtes angegeben ist, check alle tools und liste sie dem user übersichtlich und gruppiert auf.

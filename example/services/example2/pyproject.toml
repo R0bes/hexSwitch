@@ -1,0 +1,38 @@
+[project]
+name = "example2"
+version = "1.0.0"
+description = "Example service 2 - gRPC Service with inter-service communication"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "hexswitch>=0.1.0",  # Framework is already installed in base image
+    "pyyaml>=6.0",
+    "requests>=2.31.0",  # For HTTP client to example1
+    "grpcio>=1.60.0",
+    "grpcio-tools>=1.60.0",
+    "websockets>=12.0",  # For WebSocket client to example3
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[project.scripts]
+example2-service = "example2_service.main:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+

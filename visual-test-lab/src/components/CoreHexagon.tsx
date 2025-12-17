@@ -1,28 +1,30 @@
 import { getHexagonPath, getEdgeCenter } from '../utils/hexagonGeometry';
+import { useElementSelectionContext } from '../contexts/ElementSelectionContext';
 
-interface Port {
+export interface Port {
   id: string;
   label: string;
   edgeIndex: number;
   type: 'inbound' | 'outbound';
+  config?: Record<string, any>;
 }
 
 interface CoreHexagonProps {
   centerX: number;
   centerY: number;
   radius: number;
+  ports: Port[];
+  onPortDragStart?: (e: React.MouseEvent, portId: string, position: { x: number; y: number }) => void;
+  dragState?: {
+    isDragging: boolean;
+    draggedId: string | null;
+    draggedType: 'port' | null;
+    currentPosition: { x: number; y: number } | null;
+  };
 }
 
-const ports: Port[] = [
-  { id: 'api-in', label: 'API In', edgeIndex: 0, type: 'inbound' },
-  { id: 'command-bus', label: 'Command Bus', edgeIndex: 1, type: 'inbound' },
-  { id: 'event-in', label: 'Event In', edgeIndex: 2, type: 'inbound' },
-  { id: 'repo-out', label: 'Repository Out', edgeIndex: 3, type: 'outbound' },
-  { id: 'message-out', label: 'Message Out', edgeIndex: 4, type: 'outbound' },
-  { id: 'external-api-out', label: 'External API Out', edgeIndex: 5, type: 'outbound' }
-];
-
-export default function CoreHexagon({ centerX, centerY, radius }: CoreHexagonProps) {
+export default function CoreHexagon({ centerX, centerY, radius, ports, onPortDragStart, dragState }: CoreHexagonProps) {
+  const { isSelected, toggleSelection } = useElementSelectionContext();
   const hexPath = getHexagonPath(centerX, centerY, radius);
 
   return (
@@ -82,52 +84,79 @@ export default function CoreHexagon({ centerX, centerY, radius }: CoreHexagonPro
       {ports.map(port => {
         const edgeCenter = getEdgeCenter(centerX, centerY, radius, port.edgeIndex);
         const portColor = port.type === 'inbound' ? 'var(--accent-cyan)' : 'var(--accent-magenta)';
+        const isSelectedPort = isSelected('port', port.id);
+        const finalPortColor = isSelectedPort ? 'var(--accent-teal)' : portColor;
+        const isDragging = dragState?.isDragging && dragState.draggedId === port.id && dragState.draggedType === 'port';
+        const displayPos = isDragging && dragState.currentPosition ? dragState.currentPosition : edgeCenter;
+        
+        const handlePortClick = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          toggleSelection('port', port.id);
+        };
+        
+        const handleMouseDown = (e: React.MouseEvent) => {
+          if (e.button === 0 && onPortDragStart) {
+            e.stopPropagation();
+            onPortDragStart(e, port.id, edgeCenter);
+          }
+        };
         
         return (
-          <g key={port.id}>
+          <g 
+            key={port.id} 
+            onClick={handlePortClick}
+            onMouseDown={handleMouseDown}
+            data-draggable="port"
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
             {/* Connection line from edge to port */}
             <line
-              x1={edgeCenter.x}
-              y1={edgeCenter.y}
-              x2={edgeCenter.x + (port.type === 'inbound' ? -15 : 15)}
-              y2={edgeCenter.y}
-              stroke={portColor}
-              strokeWidth="1"
-              opacity="0.5"
+              x1={displayPos.x}
+              y1={displayPos.y}
+              x2={displayPos.x + (port.type === 'inbound' ? -15 : 15)}
+              y2={displayPos.y}
+              stroke={finalPortColor}
+              strokeWidth={isSelectedPort ? '2' : '1'}
+              opacity={isSelectedPort ? '0.8' : '0.5'}
             />
             
             {/* Port circle */}
             <circle
-              cx={edgeCenter.x + (port.type === 'inbound' ? -15 : 15)}
-              cy={edgeCenter.y}
-              r="6"
-              fill={portColor}
+              cx={displayPos.x + (port.type === 'inbound' ? -15 : 15)}
+              cy={displayPos.y}
+              r={isSelectedPort ? '8' : '6'}
+              fill={finalPortColor}
               stroke="var(--bg-primary)"
-              strokeWidth="2"
+              strokeWidth={isSelectedPort ? '3' : '2'}
               style={{
-                filter: `drop-shadow(0 0 4px ${portColor})`
+                filter: isSelectedPort 
+                  ? 'drop-shadow(0 0 8px var(--accent-teal))'
+                  : `drop-shadow(0 0 4px ${portColor})`,
+                transition: isDragging ? 'none' : 'all var(--transition-normal)'
               }}
             />
             
             {/* Port label with background */}
             <g>
               <rect
-                x={edgeCenter.x + (port.type === 'inbound' ? -30 : 20) - (port.label.length * 3.5)}
-                y={edgeCenter.y - 7}
+                x={displayPos.x + (port.type === 'inbound' ? -30 : 20) - (port.label.length * 3.5)}
+                y={displayPos.y - 7}
                 width={port.label.length * 7}
                 height="14"
                 rx="6"
                 fill="var(--bg-secondary)"
                 opacity="0.95"
-                stroke={portColor}
-                strokeWidth="0.5"
+                stroke={finalPortColor}
+                strokeWidth={isSelectedPort ? '1' : '0.5'}
                 style={{
-                  filter: `drop-shadow(0 0 2px ${portColor})`
+                  filter: isSelectedPort
+                    ? 'drop-shadow(0 0 4px var(--accent-teal))'
+                    : `drop-shadow(0 0 2px ${portColor})`
                 }}
               />
               <text
-                x={edgeCenter.x + (port.type === 'inbound' ? -30 : 20)}
-                y={edgeCenter.y + 3}
+                x={displayPos.x + (port.type === 'inbound' ? -30 : 20)}
+                y={displayPos.y + 3}
                 fill={portColor}
                 fontSize="9"
                 fontWeight="600"
