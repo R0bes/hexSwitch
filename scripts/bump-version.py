@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Automatically bump version in pyproject.toml."""
 
+from pathlib import Path
 import re
 import sys
-from pathlib import Path
 
 
 def get_current_version(pyproject_path: Path) -> str:

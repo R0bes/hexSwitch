@@ -5,8 +5,8 @@ This script reads the real hexSwitch implementation and exports adapter informat
 """
 
 import json
-import sys
 from pathlib import Path
+import sys
 
 # Add parent directory to path to import hexswitch
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))

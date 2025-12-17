@@ -1,7 +1,7 @@
 """Main entry point for example3 service."""
 
-import sys
 from pathlib import Path
+import sys
 
 try:
     # Try to import hexswitch as installed package first

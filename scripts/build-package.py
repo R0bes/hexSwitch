@@ -2,10 +2,10 @@
 """Build package for PyPI distribution."""
 
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 # Set UTF-8 encoding for Windows compatibility
 if sys.platform == "win32":

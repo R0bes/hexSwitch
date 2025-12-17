@@ -1,10 +1,10 @@
 """Logging configuration for HexSwitch."""
 
+from dataclasses import dataclass, field
+from enum import Enum
 import json
 import logging
 import sys
-from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Dict, Optional
 
 

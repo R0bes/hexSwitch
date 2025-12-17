@@ -4,11 +4,11 @@ hexSwitch API Server
 Provides REST API for Visual Test Lab to interact with real hexSwitch runtime.
 """
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import logging
-import sys
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+import sys
 from urllib.parse import urlparse
 
 # Add parent directory to path to import hexswitch

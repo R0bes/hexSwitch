@@ -1,9 +1,9 @@
 """HTTP inbound adapter implementation."""
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import importlib
 import json
 import logging
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 from typing import Any
 from urllib.parse import parse_qs, urlparse

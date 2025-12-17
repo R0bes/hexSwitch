@@ -6,9 +6,9 @@ import logging
 import threading
 from typing import Any
 
-import uvicorn
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
+import uvicorn
 
 from hexswitch.adapters.base import InboundAdapter
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError

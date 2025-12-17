@@ -1,7 +1,7 @@
 """Routing strategies for ports."""
 
-import logging
 from abc import ABC, abstractmethod
+import logging
 from typing import Callable
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 """Pytest configuration and fixtures."""
 
-import sys
 from pathlib import Path
+import sys
 from types import ModuleType
 from typing import Callable
 

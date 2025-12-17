@@ -1,8 +1,8 @@
 """Envelope base class with integrated observability support."""
 
-import uuid
 from dataclasses import dataclass, field
 from typing import Any
+import uuid
 
 from hexswitch.shared.observability.tracing import Span, get_current_span, start_span
 

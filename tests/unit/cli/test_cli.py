@@ -1,9 +1,9 @@
 """Unit tests for CLI entry point."""
 
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 
 import pytest
 import yaml

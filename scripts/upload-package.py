@@ -2,9 +2,9 @@
 """Upload package to PyPI or TestPyPI."""
 
 import os
+from pathlib import Path
 import subprocess
 import sys
-from pathlib import Path
 
 # Set UTF-8 encoding for Windows compatibility
 if sys.platform == "win32":

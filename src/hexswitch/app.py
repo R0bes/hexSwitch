@@ -1,8 +1,8 @@
 """Main application entry point for HexSwitch."""
 
 import argparse
-import sys
 from pathlib import Path
+import sys
 
 from hexswitch import __version__
 from hexswitch.runtime import build_execution_plan, print_execution_plan, run_runtime

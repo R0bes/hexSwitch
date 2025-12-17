@@ -1,7 +1,7 @@
 """Base service class for business logic layer."""
 
-import logging
 from abc import ABC
+import logging
 from typing import Generic, List, TypeVar
 
 from hexswitch.domain.repositories.base_repository import BaseRepositoryPort

@@ -1,8 +1,8 @@
 """Example service implementation."""
 
 import logging
-import uuid
 from typing import Any
+import uuid
 
 from example1.domain.entities.example import ExampleEntity
 from example1.domain.ports.repositories.example_repository_port import ExampleRepositoryPort

@@ -9,8 +9,8 @@ Supports multiple trace context formats:
 - Custom HexSwitch format (X-Trace-Id, X-Span-Id, X-Parent-Span-Id) - manual fallback
 """
 
-import uuid
 from typing import Any
+import uuid
 
 from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
