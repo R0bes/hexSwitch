@@ -20,7 +20,7 @@ class ObservabilityMiddleware:
         self._metrics = get_global_metrics_collector()
 
     async def __call__(
-        self, ctx: PipelineContext, next: Callable[[PipelineContext], Any]
+        self, ctx: PipelineContext, next: Callable[[PipelineContext], "Any"]
     ) -> PipelineContext:
         """Add observability (spans, metrics, logs).
 

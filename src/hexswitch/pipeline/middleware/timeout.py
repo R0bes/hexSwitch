@@ -26,7 +26,7 @@ class TimeoutMiddleware:
         self.timeout_seconds = self.policy.get("timeout_seconds", 30.0)
 
     async def __call__(
-        self, ctx: PipelineContext, next: Callable[[PipelineContext], Any]
+        self, ctx: PipelineContext, next: Callable[[PipelineContext], "Any"]
     ) -> PipelineContext:
         """Execute middleware with timeout.
 

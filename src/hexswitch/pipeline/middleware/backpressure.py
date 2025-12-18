@@ -38,7 +38,7 @@ class BackpressureMiddleware:
                 self._queue = asyncio.Queue(maxsize=self.queue_size)
 
     async def __call__(
-        self, ctx: PipelineContext, next: Callable[[PipelineContext], Any]
+        self, ctx: PipelineContext, next: Callable[[PipelineContext], "Any"]
     ) -> PipelineContext:
         """Execute middleware with backpressure control.
 

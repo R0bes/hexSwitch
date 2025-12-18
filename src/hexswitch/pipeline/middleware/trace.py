@@ -61,7 +61,7 @@ class TraceExtractionMiddleware:
     """Extract trace context from envelope headers/metadata."""
 
     async def __call__(
-        self, ctx: PipelineContext, next: Callable[[PipelineContext], Any]
+        self, ctx: PipelineContext, next: Callable[[PipelineContext], "Any"]
     ) -> PipelineContext:
         """Extract trace context from envelope headers/metadata.
 
@@ -97,7 +97,7 @@ class TraceInjectionMiddleware:
     """Inject trace context into envelope headers/metadata."""
 
     async def __call__(
-        self, ctx: PipelineContext, next: Callable[[PipelineContext], Any]
+        self, ctx: PipelineContext, next: Callable[[PipelineContext], "Any"]
     ) -> PipelineContext:
         """Inject trace context into envelope headers/metadata.
 

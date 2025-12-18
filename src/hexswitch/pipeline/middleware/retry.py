@@ -57,7 +57,7 @@ class RetryMiddleware:
         return False
 
     async def __call__(
-        self, ctx: PipelineContext, next: Callable[[PipelineContext], Any]
+        self, ctx: PipelineContext, next: Callable[[PipelineContext], "Any"]
     ) -> PipelineContext:
         """Execute middleware with retry logic.
 
