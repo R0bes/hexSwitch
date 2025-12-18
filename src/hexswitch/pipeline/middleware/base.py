@@ -1,5 +1,7 @@
 """Base middleware interface for pipeline processing."""
 
+from __future__ import annotations
+
 from typing import Any, Callable, Protocol
 
 from hexswitch.pipeline.pipeline import PipelineContext

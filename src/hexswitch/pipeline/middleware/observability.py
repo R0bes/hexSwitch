@@ -1,5 +1,7 @@
 """Observability middleware for spans, metrics, and structured logging."""
 
+from __future__ import annotations
+
 import logging
 from typing import Any, Callable
 
