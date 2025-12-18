@@ -138,6 +138,7 @@ addopts = [
     "--dist=loadscope",  # Group tests by class/module for better isolation
     "--maxfail=5",  # Stop after 5 failures for faster feedback
     # Filter RuntimeWarning for unawaited coroutines from AsyncMock garbage collection
+    # (Also handled in conftest.py for more reliable filtering)
     "-W", "ignore:coroutine.*was never awaited:RuntimeWarning",
 ]
 markers = [

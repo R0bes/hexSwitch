@@ -1,5 +1,6 @@
 """Pytest configuration and fixtures."""
 
+import warnings
 from pathlib import Path
 import sys
 from types import ModuleType
@@ -111,3 +112,20 @@ def handler_module(mock_handler: Callable) -> ModuleType:
 
     if module_name in sys.modules:
         del sys.modules[module_name]
+
+
+def pytest_configure(config):
+    """Configure pytest to filter known warnings."""
+    # Filter RuntimeWarning for unawaited coroutines from AsyncMock garbage collection
+    # This happens when AsyncMock objects are garbage collected and their coroutines
+    # are not awaited. This is a known issue with AsyncMock and pytest.
+    warnings.filterwarnings(
+        "ignore",
+        message="coroutine.*was never awaited",
+        category=RuntimeWarning,
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message=".*AsyncMockMixin._execute_mock_call.*was never awaited",
+        category=RuntimeWarning,
+    )
