@@ -1,7 +1,6 @@
 """FastAPI-based HTTP inbound adapter for HexSwitch."""
 
 import asyncio
-import importlib
 import logging
 import threading
 from typing import Any

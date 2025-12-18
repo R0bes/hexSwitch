@@ -32,7 +32,6 @@ class ObservabilityMiddleware:
             Updated context
         """
         # Extract trace context from envelope
-        span_id = ctx.envelope.span_id
         parent_span_id = ctx.envelope.parent_span_id
 
         # Create span name

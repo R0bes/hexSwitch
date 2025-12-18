@@ -162,10 +162,10 @@ class NatsAdapterClient(OutboundAdapter):
             # For request/reply, we would wait for response here
             return Envelope.success({"status": "published", "subject": subject})
 
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as err:
             raise AdapterConnectionError(
                 f"NATS request timeout after {self.timeout}s"
-            ) from None
+            ) from err
         except Exception as e:
             logger.exception(f"Error sending NATS message: {e}")
             return Envelope.error(500, f"Error sending NATS message: {str(e)}")

@@ -83,8 +83,6 @@ class NatsEnvelope:
         Returns:
             Tuple of (message_data, headers).
         """
-        # Use envelope path as subject if not provided
-
         # Convert envelope data to JSON
         message_data = json.dumps(envelope.data or {}).encode("utf-8")
 
