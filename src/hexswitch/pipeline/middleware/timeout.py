@@ -55,7 +55,7 @@ class TimeoutMiddleware:
             ctx.metadata["timeout"] = True
             return ctx
 
-        except Exception as e:
+        except Exception:
             # Re-raise other exceptions
             raise
 

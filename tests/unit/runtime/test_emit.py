@@ -1,8 +1,6 @@
 """Unit tests for Runtime.emit() and Runtime.deliver()."""
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from hexswitch.adapters.base import OutboundAdapter
 from hexswitch.runtime import Runtime

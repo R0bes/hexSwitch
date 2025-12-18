@@ -1,15 +1,12 @@
 """Unit tests for FastAPI HTTP adapter."""
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-from types import ModuleType
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
-from hexswitch.ports import PortError
 from hexswitch.adapters.http.fastapi_adapter import FastApiHttpAdapterServer
-from hexswitch.shared.envelope import Envelope
+from hexswitch.ports import PortError
 
 
 class TestFastApiHttpAdapterServer:

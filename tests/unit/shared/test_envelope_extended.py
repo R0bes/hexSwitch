@@ -1,11 +1,8 @@
 """Extended unit tests for Envelope class."""
 
-import uuid
 
-import pytest
 
 from hexswitch.shared.envelope import Envelope
-from hexswitch.shared.observability.tracing import start_span
 
 
 class TestEnvelopeObservability:

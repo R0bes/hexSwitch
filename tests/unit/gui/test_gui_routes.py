@@ -1,10 +1,9 @@
 """Unit tests for GUI routes."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
-from fastapi import Request
 from fastapi.testclient import TestClient
+import pytest
 
 from hexswitch.gui.routes import router
 from hexswitch.gui.server import GuiServer

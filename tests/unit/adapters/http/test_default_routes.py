@@ -1,7 +1,7 @@
 """Unit tests for default health and metrics routes."""
 
-import json
 from http.client import HTTPConnection
+import json
 from urllib.request import Request, urlopen
 
 import pytest
@@ -18,7 +18,7 @@ def wait_for_server_ready(port: int, timeout: float = 5.0) -> None:
     start_time = time.time()
     last_error = None
     port_open = False
-    
+
     while time.time() - start_time < timeout:
         try:
             # First check if port is open using socket
@@ -54,9 +54,9 @@ def wait_for_server_ready(port: int, timeout: float = 5.0) -> None:
         except Exception as e:
             last_error = e
             port_open = False
-        
+
         time.sleep(0.3)  # Increased sleep time
-    
+
     # If we get here, server wasn't ready in time
     error_msg = f"Server on port {port} not ready after {timeout}s"
     if port_open:
@@ -68,14 +68,14 @@ def wait_for_server_ready(port: int, timeout: float = 5.0) -> None:
 
 def cleanup_adapter(adapter) -> None:
     """Clean up adapter."""
-    import time
     import asyncio
+    import time
 
     try:
         time.sleep(0.2)
         adapter.stop()
         time.sleep(0.5)
-        
+
         # For FastAPI adapters, ensure all tasks are cancelled
         if hasattr(adapter, '_server_loop') and adapter._server_loop:
             try:
@@ -283,7 +283,7 @@ class TestDefaultRoutesHttpAdapter:
             # Verify server socket is bound
             if not (adapter.server and adapter.server.socket):
                 pytest.skip(f"HTTP adapter server not bound on port {free_port}")
-            
+
             # Try to wait for server, but skip if it times out (Windows timing issue)
             try:
                 wait_for_server_ready(free_port, timeout=20.0)
@@ -321,7 +321,7 @@ class TestDefaultRoutesHttpAdapter:
             # Verify server socket is bound
             if not (adapter.server and adapter.server.socket):
                 pytest.skip(f"HTTP adapter server not bound on port {free_port}")
-            
+
             # Try to wait for server, but skip if it times out (Windows timing issue)
             try:
                 wait_for_server_ready(free_port, timeout=20.0)
@@ -361,7 +361,7 @@ class TestDefaultRoutesHttpAdapter:
             # Verify server socket is bound
             if not (adapter.server and adapter.server.socket):
                 pytest.skip(f"HTTP adapter server not bound on port {free_port}")
-            
+
             # Try to wait for server, but skip if it times out (Windows timing issue)
             try:
                 wait_for_server_ready(free_port, timeout=20.0)

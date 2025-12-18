@@ -9,7 +9,7 @@ from hexswitch.ports.registry import get_port_registry
 from hexswitch.shared.observability import get_global_metrics_collector
 
 if TYPE_CHECKING:
-    from hexswitch.runtime import Runtime
+    pass
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ async def get_ports() -> JSONResponse:
     Returns:
         JSON response with port information.
     """
-    port_registry = get_port_registry()
+    get_port_registry()
     ports = []
 
     # Get all registered ports
@@ -38,7 +38,7 @@ async def get_handlers() -> JSONResponse:
     Returns:
         JSON response with handler information.
     """
-    port_registry = get_port_registry()
+    get_port_registry()
     handlers = []
 
     # Similar to ports, we need a way to list all handlers

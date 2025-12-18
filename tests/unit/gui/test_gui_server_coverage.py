@@ -1,7 +1,5 @@
 """Additional unit tests for GUI server to improve coverage."""
 
-import os
-import threading
 import time
 from unittest.mock import MagicMock, patch
 
@@ -22,7 +20,7 @@ class TestGuiServerStart:
         with patch("hexswitch.gui.server.uvicorn.Server") as mock_server_class:
             mock_server = MagicMock()
             mock_server_class.return_value = mock_server
-            
+
             # Mock asyncio module functions
             with patch("asyncio.new_event_loop") as mock_new_loop, \
                  patch("asyncio.set_event_loop") as mock_set_loop:
@@ -30,12 +28,12 @@ class TestGuiServerStart:
                 mock_new_loop.return_value = mock_loop
                 mock_task = MagicMock()
                 mock_loop.create_task.return_value = mock_task
-                
+
                 server.start()
-                
+
                 # Give thread time to start
                 time.sleep(0.1)
-                
+
                 assert server._running is True
                 assert server._app is not None
                 assert server._server is not None
@@ -48,7 +46,7 @@ class TestGuiServerStart:
         # Mock uvicorn to raise exception
         with patch("hexswitch.gui.server.uvicorn.Server") as mock_server_class:
             mock_server_class.side_effect = Exception("Server creation failed")
-            
+
             with pytest.raises(RuntimeError, match="Failed to start GUI server"):
                 server.start()
 
@@ -64,12 +62,12 @@ class TestGuiServerStart:
                 # Make mount raise exception
                 mock_app.mount.side_effect = Exception("Mount failed")
                 mock_create.return_value = mock_app
-                
+
                 # Mock uvicorn
                 with patch("hexswitch.gui.server.uvicorn.Server") as mock_server_class:
                     mock_server = MagicMock()
                     mock_server_class.return_value = mock_server
-                    
+
                     # Use real event loop instead of MagicMock
                     with patch("asyncio.new_event_loop") as mock_new_loop, \
                          patch("asyncio.set_event_loop") as mock_set_loop:
@@ -78,14 +76,14 @@ class TestGuiServerStart:
                         mock_new_loop.return_value = real_loop
                         mock_task = MagicMock()
                         real_loop.create_task = MagicMock(return_value=mock_task)
-                        
+
                         # Should not raise, just log warning
                         server.start()
                         time.sleep(0.1)
-                        
+
                         # Server should still start
                         assert server._running is True
-                        
+
                         # Cleanup
                         if not real_loop.is_closed():
                             real_loop.close()
@@ -163,7 +161,7 @@ class TestGuiServerStop:
             server.stop()
         except Exception:
             pass  # Expected to handle exceptions internally
-        
+
         # Verify stop was attempted (may or may not set _running to False on error)
         assert server._server is not None
 
@@ -180,7 +178,7 @@ class TestGuiServerStaticFiles:
         with patch("os.path.exists", return_value=True):
             with patch("hexswitch.gui.server.StaticFiles") as mock_static:
                 app = server._create_app()
-                
+
                 assert app is not None
                 # Should attempt to mount static files
                 mock_static.assert_called()
@@ -193,7 +191,7 @@ class TestGuiServerStaticFiles:
         # Mock os.path.exists to return False
         with patch("os.path.exists", return_value=False):
             app = server._create_app()
-            
+
             assert app is not None
             # Should not raise if static dir doesn't exist
 

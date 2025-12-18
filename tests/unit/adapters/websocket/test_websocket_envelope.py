@@ -1,6 +1,5 @@
 """Unit tests for WebSocketEnvelope conversion logic."""
 
-import json
 
 import pytest
 
@@ -17,9 +16,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = '{"test": "data"}'
         path = "/test"
-        
+
         result = envelope_converter.request_to_envelope(message, path)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == path
         assert result.body == {"test": "data"}
@@ -31,11 +30,11 @@ class TestWebSocketEnvelope:
         path = "/test"
         remote_address = "127.0.0.1"
         websocket_id = 123
-        
+
         result = envelope_converter.message_to_envelope(
             message, path, remote_address, websocket_id
         )
-        
+
         assert isinstance(result, Envelope)
         assert result.path == path
         assert result.method is None
@@ -49,9 +48,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = b'{"key": "value"}'
         path = "/test"
-        
+
         result = envelope_converter.message_to_envelope(message, path)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == path
         assert result.body == {"key": "value"}
@@ -62,9 +61,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = "not valid json"
         path = "/test"
-        
+
         result = envelope_converter.message_to_envelope(message, path)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == path
         assert result.body == {"raw": "not valid json"}
@@ -76,9 +75,9 @@ class TestWebSocketEnvelope:
         # Create bytes that can't be decoded as UTF-8
         message = b'\xff\xfe\x00\x01'
         path = "/test"
-        
+
         result = envelope_converter.message_to_envelope(message, path)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == path
         # Should fall back to raw message in exception handler
@@ -89,9 +88,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = '{"test": "data"}'
         path = "/test"
-        
+
         result = envelope_converter.message_to_envelope(message, path)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == path
         assert "remote_address" not in result.metadata
@@ -101,54 +100,54 @@ class TestWebSocketEnvelope:
         """Test that envelope_to_response delegates to envelope_to_message."""
         envelope_converter = WebSocketEnvelope()
         envelope = Envelope(path="/test", data={"result": "success"})
-        
+
         result = envelope_converter.envelope_to_response(envelope)
-        
+
         assert result == '{"result": "success"}'
 
     def test_envelope_to_message_with_error(self):
         """Test envelope_to_message with error_message."""
         envelope_converter = WebSocketEnvelope()
         envelope = Envelope(path="/test", error_message="Something went wrong")
-        
+
         result = envelope_converter.envelope_to_message(envelope)
-        
+
         assert result == '{"error": "Something went wrong"}'
 
     def test_envelope_to_message_with_data(self):
         """Test envelope_to_message with data."""
         envelope_converter = WebSocketEnvelope()
         envelope = Envelope(path="/test", data={"key": "value"})
-        
+
         result = envelope_converter.envelope_to_message(envelope)
-        
+
         assert result == '{"key": "value"}'
 
     def test_envelope_to_message_without_data_or_error(self):
         """Test envelope_to_message without data or error."""
         envelope_converter = WebSocketEnvelope()
         envelope = Envelope(path="/test")
-        
+
         result = envelope_converter.envelope_to_message(envelope)
-        
+
         assert result == "{}"
 
     def test_envelope_to_request_with_body(self):
         """Test envelope_to_request with body."""
         envelope_converter = WebSocketEnvelope()
         envelope = Envelope(path="/test", body={"action": "test"})
-        
+
         result = envelope_converter.envelope_to_request(envelope)
-        
+
         assert result == '{"action": "test"}'
 
     def test_envelope_to_request_without_body(self):
         """Test envelope_to_request without body."""
         envelope_converter = WebSocketEnvelope()
         envelope = Envelope(path="/test")
-        
+
         result = envelope_converter.envelope_to_request(envelope)
-        
+
         assert result == "{}"
 
     def test_response_to_envelope_delegates_to_message_to_envelope_response(self):
@@ -156,9 +155,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = '{"result": "ok"}'
         original_envelope = Envelope(path="/test", method="GET")
-        
+
         result = envelope_converter.response_to_envelope(message, original_envelope)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == "/test"
         assert result.method == "GET"
@@ -170,9 +169,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = '{"result": "success"}'
         original_envelope = Envelope(path="/test", method="POST")
-        
+
         result = envelope_converter.message_to_envelope_response(message, original_envelope)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == "/test"
         assert result.method == "POST"
@@ -185,9 +184,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = b'{"result": "ok"}'
         original_envelope = Envelope(path="/test")
-        
+
         result = envelope_converter.message_to_envelope_response(message, original_envelope)
-        
+
         assert isinstance(result, Envelope)
         assert result.status_code == 200
         assert result.data == {"result": "ok"}
@@ -198,9 +197,9 @@ class TestWebSocketEnvelope:
         message = '{"error": "Something went wrong"}'
         original_envelope = Envelope(path="/test", method="GET")
         original_envelope.metadata["test"] = "value"
-        
+
         result = envelope_converter.message_to_envelope_response(message, original_envelope)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == "/test"
         assert result.method == "GET"
@@ -213,9 +212,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = "not valid json"
         original_envelope = Envelope(path="/test")
-        
+
         result = envelope_converter.message_to_envelope_response(message, original_envelope)
-        
+
         assert isinstance(result, Envelope)
         assert result.status_code == 200
         assert result.data == {"raw": "not valid json"}
@@ -225,9 +224,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = b'\xff\xfe\x00\x01'
         original_envelope = Envelope(path="/test")
-        
+
         result = envelope_converter.message_to_envelope_response(message, original_envelope)
-        
+
         assert isinstance(result, Envelope)
         # Should handle exception and fall back to raw message
         assert result.status_code == 200
@@ -236,9 +235,9 @@ class TestWebSocketEnvelope:
         """Test message_to_envelope_response without original envelope."""
         envelope_converter = WebSocketEnvelope()
         message = '{"result": "ok"}'
-        
+
         result = envelope_converter.message_to_envelope_response(message, None)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == ""
         assert result.method is None
@@ -250,9 +249,9 @@ class TestWebSocketEnvelope:
         """Test message_to_envelope_response with error without original envelope."""
         envelope_converter = WebSocketEnvelope()
         message = '{"error": "Error occurred"}'
-        
+
         result = envelope_converter.message_to_envelope_response(message, None)
-        
+
         assert isinstance(result, Envelope)
         assert result.path == ""
         assert result.method is None
@@ -265,9 +264,9 @@ class TestWebSocketEnvelope:
         envelope_converter = WebSocketEnvelope()
         message = '"just a string"'
         original_envelope = Envelope(path="/test")
-        
+
         result = envelope_converter.message_to_envelope_response(message, original_envelope)
-        
+
         assert isinstance(result, Envelope)
         assert result.status_code == 200
         # Non-dict data should result in None

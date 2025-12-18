@@ -1,6 +1,5 @@
 """Unit tests for trace context."""
 
-import pytest
 
 from hexswitch.shared.observability.trace_context import (
     extract_trace_context_from_headers,

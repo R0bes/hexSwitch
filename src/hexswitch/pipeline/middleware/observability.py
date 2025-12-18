@@ -1,7 +1,7 @@
 """Observability middleware for spans, metrics, and structured logging."""
 
 import logging
-from typing import Callable
+from typing import Any, Callable
 
 from hexswitch.pipeline.pipeline import PipelineContext
 from hexswitch.shared.observability import get_global_metrics_collector, get_global_tracer, start_span
@@ -30,7 +30,6 @@ class ObservabilityMiddleware:
             Updated context
         """
         # Extract trace context from envelope
-        trace_id = ctx.envelope.trace_id
         span_id = ctx.envelope.span_id
         parent_span_id = ctx.envelope.parent_span_id
 

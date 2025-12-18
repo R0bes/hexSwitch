@@ -416,10 +416,10 @@ class HttpAdapterServer(InboundAdapter):
             self.server = HTTPServer(("", self.port), handler_factory)
             self.server_thread = Thread(target=self.server.serve_forever, daemon=True)
             self.server_thread.start()
-            
+
             # Give server time to start and verify it's listening
-            import time
             import socket
+            import time
             max_attempts = 200  # Increase attempts for slower systems
             self._running = True  # Mark as running, then verify
             server_ready = False
@@ -438,7 +438,7 @@ class HttpAdapterServer(InboundAdapter):
                 except Exception:
                     pass
                 time.sleep(0.1)
-            
+
             if not server_ready:
                 logger.warning(f"HTTP adapter '{self.name}' may not be fully ready on port {self.port} after {max_attempts*0.1}s")
             else:

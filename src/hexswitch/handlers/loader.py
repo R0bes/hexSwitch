@@ -7,7 +7,6 @@ from typing import Callable
 
 from hexswitch.ports.exceptions import PortError
 from hexswitch.ports.registry import get_port_registry
-from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 

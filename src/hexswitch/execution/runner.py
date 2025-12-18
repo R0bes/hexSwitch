@@ -1,9 +1,9 @@
 """Adapter runners for unified execution model."""
 
-import asyncio
-import logging
 from abc import ABC, abstractmethod
+import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import logging
 from typing import Any, Callable
 
 logger = logging.getLogger(__name__)

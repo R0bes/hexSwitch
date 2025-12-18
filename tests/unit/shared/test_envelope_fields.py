@@ -1,9 +1,6 @@
 """Golden tests for critical Envelope fields: trace_id, span_id, parent_span_id."""
 
 import re
-import uuid
-
-import pytest
 
 from hexswitch.shared.envelope import Envelope
 

@@ -1,10 +1,10 @@
 """Pytest configuration and fixtures."""
 
-import warnings
 from pathlib import Path
 import sys
 from types import ModuleType
 from typing import Callable
+import warnings
 
 import pytest
 

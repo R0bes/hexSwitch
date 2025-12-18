@@ -1,11 +1,9 @@
 """Unit tests for NATS outbound adapter."""
 
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from unittest.mock import MagicMock
 
 from hexswitch.adapters.exceptions import AdapterConnectionError
 from hexswitch.adapters.nats.outbound_adapter import NatsAdapterClient
@@ -389,7 +387,7 @@ class TestNatsAdapterClient:
 
             # Mock close to raise exception
             mock_client.close = AsyncMock(side_effect=Exception("Close error"))
-            
+
             # Mock _async_publish to avoid coroutine warnings during garbage collection
             adapter._async_publish = AsyncMock(return_value=None)
 

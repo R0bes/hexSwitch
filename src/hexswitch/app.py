@@ -5,7 +5,6 @@ from pathlib import Path
 import sys
 
 from hexswitch import __version__
-from hexswitch.shared.config.config import build_execution_plan
 from hexswitch.runtime import Runtime
 from hexswitch.shared.config import (
     DEFAULT_CONFIG_PATH,
@@ -14,6 +13,7 @@ from hexswitch.shared.config import (
     load_config,
     validate_config,
 )
+from hexswitch.shared.config.config import build_execution_plan
 from hexswitch.shared.logging import get_logger, setup_logging
 
 logger = get_logger(__name__)

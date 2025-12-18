@@ -1,6 +1,6 @@
 """Unit tests for RetryMiddleware."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -47,7 +47,6 @@ async def test_retry_middleware_success_first_attempt():
 @pytest.mark.asyncio
 async def test_retry_middleware_retries_on_retryable_error():
     """Test retry middleware retries on retryable error."""
-    import asyncio
 
     middleware = RetryMiddleware(
         {

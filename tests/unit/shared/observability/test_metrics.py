@@ -1,6 +1,5 @@
 """Unit tests for metrics module."""
 
-import pytest
 
 from hexswitch.shared.observability.metrics import (
     SafeConsoleMetricExporter,
@@ -121,7 +120,7 @@ class TestSafeConsoleMetricExporter:
     def test_export(self) -> None:
         """Test export method."""
         from opentelemetry.sdk.metrics.export import MetricExportResult
-        
+
         exporter = SafeConsoleMetricExporter()
         # export() expects MetricData from OpenTelemetry SDK
         # We test that the method exists and handles errors gracefully

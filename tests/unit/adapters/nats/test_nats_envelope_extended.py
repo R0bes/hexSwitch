@@ -1,6 +1,5 @@
 """Extended unit tests for NATS envelope conversion."""
 
-import pytest
 
 from hexswitch.adapters.nats._Nats_Envelope import NatsEnvelope
 from hexswitch.shared.envelope import Envelope

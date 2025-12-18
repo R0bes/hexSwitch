@@ -1,7 +1,6 @@
 """Unit tests for trace middleware."""
 
-import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -23,7 +22,7 @@ class TestParseTraceparent:
         """Test parsing valid traceparent header."""
         traceparent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
         trace_id, span_id, parent_span_id = parse_traceparent(traceparent)
-        
+
         assert trace_id == "4bf92f3577b34da6a3ce929d0e0e4736"
         assert span_id == "00f067aa0ba902b7"
         assert parent_span_id is None
@@ -31,17 +30,17 @@ class TestParseTraceparent:
     def test_parse_traceparent_invalid_format(self):
         """Test parsing invalid traceparent format."""
         traceparent = "invalid-format"
-        
+
         with pytest.raises(ValueError, match="Invalid traceparent format"):
             parse_traceparent(traceparent)
 
     def test_parse_traceparent_wrong_version(self):
         """Test parsing traceparent with unsupported version."""
         traceparent = "01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
-        
+
         with patch("hexswitch.pipeline.middleware.trace.logger") as mock_logger:
             trace_id, span_id, parent_span_id = parse_traceparent(traceparent)
-            
+
             assert trace_id == "4bf92f3577b34da6a3ce929d0e0e4736"
             assert span_id == "00f067aa0ba902b7"
             assert parent_span_id is None
@@ -51,7 +50,7 @@ class TestParseTraceparent:
     def test_parse_traceparent_wrong_parts_count(self):
         """Test parsing traceparent with wrong number of parts."""
         traceparent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7"
-        
+
         with pytest.raises(ValueError, match="Invalid traceparent format"):
             parse_traceparent(traceparent)
 
@@ -64,9 +63,9 @@ class TestFormatTraceparent:
         """Test formatting traceparent header."""
         trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
         span_id = "00f067aa0ba902b7"
-        
+
         result = format_traceparent(trace_id, span_id)
-        
+
         assert result == f"00-{trace_id}-{span_id}-01"
 
     def test_format_traceparent_with_parent_span_id(self):
@@ -74,9 +73,9 @@ class TestFormatTraceparent:
         trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
         span_id = "00f067aa0ba902b7"
         parent_span_id = "parent123"
-        
+
         result = format_traceparent(trace_id, span_id, parent_span_id)
-        
+
         # parent_span_id is currently not used in format
         assert result == f"00-{trace_id}-{span_id}-01"
 
@@ -94,12 +93,12 @@ class TestTraceExtractionMiddleware:
             headers={"traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"}
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         assert result_ctx.envelope.trace_id == "4bf92f3577b34da6a3ce929d0e0e4736"
         assert result_ctx.envelope.span_id == "00f067aa0ba902b7"
         assert result_ctx.envelope.parent_span_id is None
@@ -112,13 +111,13 @@ class TestTraceExtractionMiddleware:
             headers={"traceparent": "invalid-format"}
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         with patch("hexswitch.pipeline.middleware.trace.logger") as mock_logger:
             result_ctx = await middleware(ctx, next_func)
-            
+
             # Should continue without setting trace context
             assert result_ctx.envelope.trace_id is None
             mock_logger.warning.assert_called_once()
@@ -132,12 +131,12 @@ class TestTraceExtractionMiddleware:
             metadata={"trace_id": "trace123", "span_id": "span456", "parent_span_id": "parent789"}
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         assert result_ctx.envelope.trace_id == "trace123"
         assert result_ctx.envelope.span_id == "span456"
         assert result_ctx.envelope.parent_span_id == "parent789"
@@ -150,12 +149,12 @@ class TestTraceExtractionMiddleware:
             metadata={"trace_id": "trace123"}
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         assert result_ctx.envelope.trace_id == "trace123"
         # span_id and parent_span_id should be None if not in metadata
         assert result_ctx.envelope.span_id is None
@@ -170,12 +169,12 @@ class TestTraceExtractionMiddleware:
             metadata={"trace_id": "metadata_trace", "span_id": "metadata_span"}
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         # Should use header, not metadata
         assert result_ctx.envelope.trace_id == "4bf92f3577b34da6a3ce929d0e0e4736"
         assert result_ctx.envelope.span_id == "00f067aa0ba902b7"
@@ -195,12 +194,12 @@ class TestTraceInjectionMiddleware:
             span_id="00f067aa0ba902b7"
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         assert "traceparent" in result_ctx.envelope.headers
         assert result_ctx.envelope.headers["traceparent"] == "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
         assert result_ctx.envelope.metadata["trace_id"] == "4bf92f3577b34da6a3ce929d0e0e4736"
@@ -216,12 +215,12 @@ class TestTraceInjectionMiddleware:
             parent_span_id="parent789"
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         assert result_ctx.envelope.metadata["trace_id"] == "trace123"
         assert result_ctx.envelope.metadata["span_id"] == "span456"
         assert result_ctx.envelope.metadata["parent_span_id"] == "parent789"
@@ -236,12 +235,12 @@ class TestTraceInjectionMiddleware:
             parent_span_id=None
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         assert result_ctx.envelope.metadata["trace_id"] == "trace123"
         assert result_ctx.envelope.metadata["span_id"] == "span456"
         assert "parent_span_id" not in result_ctx.envelope.metadata
@@ -255,12 +254,12 @@ class TestTraceInjectionMiddleware:
             # span_id is missing
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         # Should not inject trace context
         assert "traceparent" not in result_ctx.envelope.headers
         assert "trace_id" not in result_ctx.envelope.metadata
@@ -274,17 +273,17 @@ class TestTraceInjectionMiddleware:
             span_id="span456"
         )
         ctx = PipelineContext(envelope=envelope, port_name="test", stage="test")
-        
+
         call_order = []
-        
+
         async def next_func(ctx: PipelineContext) -> PipelineContext:
             call_order.append("next")
             # Modify envelope to verify it's called first
             ctx.envelope.metadata["modified"] = True
             return ctx
-        
+
         result_ctx = await middleware(ctx, next_func)
-        
+
         assert call_order == ["next"]
         assert result_ctx.envelope.metadata["modified"] is True
         # Trace should still be injected after next

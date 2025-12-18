@@ -32,7 +32,7 @@ def parse_traceparent(traceparent: str) -> tuple[str, str, str | None]:
 
     trace_id = parts[1]
     span_id = parts[2]
-    flags = parts[3]
+    parts[3]
 
     # For now, parent_span_id is None (could be extracted from flags or other headers)
     parent_span_id = None

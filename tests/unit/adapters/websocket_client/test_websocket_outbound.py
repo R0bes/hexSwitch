@@ -2,9 +2,7 @@
 
 import asyncio
 import json
-import threading
-import time
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 import websockets
@@ -213,7 +211,7 @@ class TestWebSocketAdapterClient:
 
         # Mock _send_async using AsyncMock to avoid coroutine warnings
         adapter._send_async = AsyncMock(return_value=None)
-        
+
         with patch.object(adapter._message_queue, "get_nowait", side_effect=asyncio.QueueEmpty()):
             with patch("asyncio.run_coroutine_threadsafe") as mock_run:
                 mock_future = Mock()
@@ -367,7 +365,7 @@ class TestWebSocketAdapterClient:
 
             result = adapter.receive()
             assert result == {"result": "success"}
-        
+
         # Clean up loop
         if adapter._loop and not adapter._loop.is_closed():
             adapter._loop.close()
@@ -411,7 +409,7 @@ class TestWebSocketAdapterClient:
         mock_queue = AsyncMock()
         mock_queue.get = AsyncMock(side_effect=asyncio.TimeoutError())
         adapter._message_queue = mock_queue
-        
+
         with patch("asyncio.run_coroutine_threadsafe") as mock_run:
             mock_future = Mock()
             mock_future.result.side_effect = asyncio.TimeoutError()
@@ -595,7 +593,7 @@ class TestWebSocketAdapterClient:
         mock_ws = AsyncMock()
         async def mock_connect(*args, **kwargs):
             return mock_ws
-        
+
         with patch.object(websockets, "connect", side_effect=mock_connect):
             with patch("hexswitch.adapters.websocket.outbound_adapter.logger") as mock_logger:
                 await adapter._connect_async()

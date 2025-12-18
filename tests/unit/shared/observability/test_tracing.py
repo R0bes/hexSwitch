@@ -1,11 +1,8 @@
 """Unit tests for tracing module."""
 
-import uuid
 
-import pytest
 
 from hexswitch.shared.observability.tracing import (
-    Span,
     get_current_span,
     get_global_tracer,
     start_span,

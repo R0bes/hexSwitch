@@ -1,6 +1,5 @@
 """Unit tests for NATS inbound adapter."""
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest

@@ -65,7 +65,7 @@ class TestRuntimeDispatch:
         runtime = Runtime(config)
 
         envelope = Envelope(path="/test", method="GET", metadata={})
-        
+
         # Mock pipeline.process
         with patch.object(runtime.pipeline, "process") as mock_process:
             mock_process.return_value = Envelope.success({"result": "ok"})
@@ -90,7 +90,7 @@ class TestRuntimeDispatch:
         runtime = Runtime(config)
 
         envelope = Envelope(path="/test", method="GET", metadata={"port_name": "test_port"})
-        
+
         # Mock pipeline.process
         with patch.object(runtime.pipeline, "process") as mock_process:
             mock_process.return_value = Envelope.success({"result": "ok"})
@@ -115,7 +115,7 @@ class TestRuntimeDispatch:
         runtime = Runtime(config)
 
         envelope = Envelope(path="/test", method="GET", metadata={"port_name": "test_port"})
-        
+
         # Mock pipeline.process
         with patch.object(runtime.pipeline, "process") as mock_process:
             mock_process.return_value = Envelope.success({"result": "ok"})
@@ -140,7 +140,7 @@ class TestRuntimeDispatch:
         runtime = Runtime(config)
 
         envelope = Envelope(path="/test", method="GET", metadata={"port_name": "test_port"})
-        
+
         # Mock pipeline.process
         with patch.object(runtime.pipeline, "process") as mock_process:
             mock_process.return_value = Envelope.success({"result": "ok"})
@@ -157,7 +157,7 @@ class TestRuntimePortPolicies:
         """Test loading port policies with empty config."""
         config = {"service": {"name": "test-service"}}
         runtime = Runtime(config)
-        
+
         # Should not raise
         assert runtime.pipeline is not None
 
@@ -165,7 +165,7 @@ class TestRuntimePortPolicies:
         """Test loading port policies when no ports config."""
         config = {"service": {"name": "test-service"}}
         runtime = Runtime(config)
-        
+
         # Should not raise
         assert runtime.pipeline is not None
 
@@ -184,7 +184,7 @@ class TestRuntimePortPolicies:
             }
         }
         runtime = Runtime(config)
-        
+
         # Verify policy was set
         policy = runtime.pipeline.get_port_policy("test_port")
         assert policy is not None
@@ -201,7 +201,7 @@ class TestRuntimePortPolicies:
             }
         }
         runtime = Runtime(config)
-        
+
         # Should not raise, just skip
         assert runtime.pipeline is not None
 
@@ -250,7 +250,7 @@ class TestRuntimeErrorHandling:
         # Mock adapter factory to raise error
         with patch.object(runtime.adapter_factory, "create_inbound_adapter") as mock_create:
             mock_create.side_effect = Exception("Adapter creation failed")
-            
+
             with pytest.raises(RuntimeError, match="Failed to start adapter"):
                 asyncio.run(runtime._async_start())
 
@@ -268,7 +268,7 @@ class TestRuntimeErrorHandling:
 
         # Should not raise, just log error
         asyncio.run(runtime._async_stop())
-        
+
         # Adapters should be cleared
         assert len(runtime.inbound_adapters) == 0
 
@@ -283,6 +283,6 @@ class TestRuntimeErrorHandling:
 
         # Should return early
         asyncio.run(runtime._async_stop())
-        
+
         assert runtime._shutdown_requested is True
 

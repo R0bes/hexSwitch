@@ -1,7 +1,7 @@
 """Unit tests for config loading functions."""
 
-import tempfile
 from pathlib import Path
+import tempfile
 
 import pytest
 import yaml

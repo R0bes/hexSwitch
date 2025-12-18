@@ -165,7 +165,7 @@ class NatsAdapterClient(OutboundAdapter):
         except asyncio.TimeoutError:
             raise AdapterConnectionError(
                 f"NATS request timeout after {self.timeout}s"
-            )
+            ) from None
         except Exception as e:
             logger.exception(f"Error sending NATS message: {e}")
             return Envelope.error(500, f"Error sending NATS message: {str(e)}")

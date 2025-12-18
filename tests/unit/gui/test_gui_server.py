@@ -1,8 +1,6 @@
 """Unit tests for GUI server."""
 
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from hexswitch.gui.server import GuiServer
 

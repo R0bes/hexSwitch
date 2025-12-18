@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from hexswitch.handlers.loader import HandlerError, HandlerLoader
-from hexswitch.ports.exceptions import PortError, PortNotFoundError
+from hexswitch.ports.exceptions import PortNotFoundError
 from hexswitch.shared.envelope import Envelope
 
 

@@ -1,10 +1,10 @@
 """Integration tests for outbound flow: Handler → Outbound Adapter → External Service."""
 
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import socket
-import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
+import time
 from urllib.request import Request, urlopen
 
 import pytest

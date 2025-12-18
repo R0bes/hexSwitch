@@ -88,7 +88,7 @@ class GuiServer:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             self._loop = loop
-            server_task = loop.create_task(self._server.serve())
+            loop.create_task(self._server.serve())
 
             def run_server():
                 loop.run_forever()

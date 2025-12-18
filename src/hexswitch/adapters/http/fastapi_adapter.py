@@ -396,12 +396,12 @@ class FastApiHttpAdapterServer(InboundAdapter):
                     pending_tasks = [task for task in asyncio.all_tasks(self._server_loop) if not task.done()]
                     for task in pending_tasks:
                         task.cancel()
-                    
+
                     # Wait briefly for tasks to be cancelled
                     if pending_tasks:
                         import time
                         time.sleep(0.1)
-                    
+
                     # Schedule loop stop in a thread-safe way
                     self._server_loop.call_soon_threadsafe(self._server_loop.stop)
                     # Wait briefly for loop to stop

@@ -206,16 +206,16 @@ def test_cli_run_dry_run() -> None:
 @pytest.mark.timeout(15)  # Extra timeout for this test since it starts a runtime
 def test_cli_run_starts_runtime() -> None:
     """Test that 'run' command starts runtime (with timeout to avoid hanging)."""
+    import shutil
     import signal
     import time
-    import shutil
 
     config_data = {"service": {"name": "test-service"}}
 
     # Create temporary directory and config file
     tmpdir = tempfile.mkdtemp()
     config_path = Path(tmpdir) / "hex-config.yaml"
-    
+
     try:
         with config_path.open("w") as f:
             yaml.dump(config_data, f)
@@ -269,11 +269,11 @@ def test_cli_run_starts_runtime() -> None:
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
-            
+
             # On Windows, wait a bit longer to ensure file handles are released
             if sys.platform == "win32":
                 time.sleep(0.2)
-            
+
             # Close stdout/stderr to release file handles
             if process.stdout:
                 process.stdout.close()
@@ -293,5 +293,5 @@ def test_cli_run_starts_runtime() -> None:
                 else:
                     # Last attempt failed - log but don't fail the test
                     import warnings
-                    warnings.warn(f"Could not delete temporary directory {tmpdir}: {e}")
+                    warnings.warn(f"Could not delete temporary directory {tmpdir}: {e}", stacklevel=2)
 

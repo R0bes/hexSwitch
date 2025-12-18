@@ -2,7 +2,7 @@
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -23,9 +23,9 @@ class TestAsyncAdapterRunner:
         runner = AsyncAdapterRunner()
         adapter = MagicMock()
         adapter.start_async = AsyncMock(return_value=None)
-        
+
         await runner.start(adapter)
-        
+
         adapter.start_async.assert_called_once()
 
     async def test_start_with_sync_start_method(self):
@@ -35,11 +35,11 @@ class TestAsyncAdapterRunner:
         class SyncAdapter:
             def start(self):
                 pass
-        
+
         adapter = SyncAdapter()
-        
+
         await runner.start(adapter)
-        
+
         # Should complete without error
         assert True
 
@@ -47,7 +47,7 @@ class TestAsyncAdapterRunner:
         """Test starting adapter without start method raises error."""
         runner = AsyncAdapterRunner()
         adapter = MagicMock(spec=[])  # No methods
-        
+
         with pytest.raises(ValueError, match="has no start method"):
             await runner.start(adapter)
 
@@ -56,9 +56,9 @@ class TestAsyncAdapterRunner:
         runner = AsyncAdapterRunner()
         adapter = MagicMock()
         adapter.stop_async = AsyncMock(return_value=None)
-        
+
         await runner.stop(adapter)
-        
+
         adapter.stop_async.assert_called_once()
 
     async def test_stop_with_sync_stop_method(self):
@@ -68,11 +68,11 @@ class TestAsyncAdapterRunner:
         class SyncAdapter:
             def stop(self):
                 pass
-        
+
         adapter = SyncAdapter()
-        
+
         await runner.stop(adapter)
-        
+
         # Should complete without error
         assert True
 
@@ -81,22 +81,22 @@ class TestAsyncAdapterRunner:
         runner = AsyncAdapterRunner()
         adapter = MagicMock()
         adapter.stop_async = AsyncMock(return_value=None)
-        
+
         # Create a task that will be cancelled
         async def long_running_task():
             try:
                 await asyncio.sleep(10)
             except asyncio.CancelledError:
                 pass
-        
+
         task = runner.run_in_background(long_running_task())
-        
+
         # Wait a bit to ensure task is running
         await asyncio.sleep(0.01)
-        
+
         # Stop should cancel the task
         await runner.stop(adapter)
-        
+
         # Task should be cancelled
         assert task.cancelled() or task.done()
 
@@ -105,37 +105,37 @@ class TestAsyncAdapterRunner:
         runner = AsyncAdapterRunner()
         adapter = MagicMock()
         adapter.stop_async = AsyncMock(return_value=None)
-        
+
         task_completed = False
-        
+
         async def quick_task():
             nonlocal task_completed
             await asyncio.sleep(0.01)
             task_completed = True
-        
+
         task = runner.run_in_background(quick_task())
-        
+
         # Wait a bit to ensure task is running
         await asyncio.sleep(0.005)
-        
+
         await runner.stop(adapter)
-        
+
         # Task should have completed (stop waits for tasks)
         assert task_completed or task.done()
 
     async def test_run_in_background(self):
         """Test running coroutine in background."""
         runner = AsyncAdapterRunner()
-        
+
         async def background_task():
             await asyncio.sleep(0.01)
             return "done"
-        
+
         task = runner.run_in_background(background_task())
-        
+
         assert isinstance(task, asyncio.Task)
         assert task in runner._tasks
-        
+
         # Wait for task to complete
         result = await task
         assert result == "done"
@@ -145,25 +145,25 @@ class TestAsyncAdapterRunner:
         runner = AsyncAdapterRunner()
         adapter = MagicMock()
         adapter.stop_async = AsyncMock(return_value=None)
-        
+
         task_results = []
-        
+
         async def task1():
             await asyncio.sleep(0.01)
             task_results.append(1)
-        
+
         async def task2():
             await asyncio.sleep(0.01)
             task_results.append(2)
-        
+
         task1_handle = runner.run_in_background(task1())
         task2_handle = runner.run_in_background(task2())
-        
+
         # Wait a bit to ensure tasks are running
         await asyncio.sleep(0.005)
-        
+
         await runner.stop(adapter)
-        
+
         # Both tasks should have completed (stop waits for tasks)
         # Tasks might complete before or during stop, so check both conditions
         assert len(task_results) == 2 or (task1_handle.done() and task2_handle.done())
@@ -178,7 +178,7 @@ class TestAsyncAdapterRunner:
         asyncio.set_event_loop(loop)
         try:
             runner = AsyncAdapterRunner(loop=loop)
-            
+
             assert runner.loop == loop
         finally:
             loop.close()
@@ -188,14 +188,14 @@ class TestAsyncAdapterRunner:
         """Test initializing without loop uses current loop."""
         # This test needs to run in an async context with an event loop
         runner = AsyncAdapterRunner()
-        
+
         assert runner.loop is not None
         assert isinstance(runner.loop, asyncio.AbstractEventLoop)
 
     def test_init_without_loop_no_event_loop(self):
         """Test initializing without loop when no event loop exists creates new one."""
         import threading
-        
+
         def run_in_thread():
             # This thread has no event loop - remove any existing loop
             try:
@@ -204,16 +204,16 @@ class TestAsyncAdapterRunner:
                     loop.close()
             except RuntimeError:
                 pass
-            
+
             # Clear the event loop for this thread
             asyncio.set_event_loop(None)
-            
+
             # Now create runner - should create new loop
             runner = AsyncAdapterRunner()
             assert runner.loop is not None
             assert isinstance(runner.loop, asyncio.AbstractEventLoop)
             runner.loop.close()
-        
+
         thread = threading.Thread(target=run_in_thread)
         thread.start()
         thread.join()
@@ -228,9 +228,9 @@ class TestBlockingAdapterRunner:
         runner = BlockingAdapterRunner()
         adapter = MagicMock()
         adapter.start = MagicMock(return_value=None)
-        
+
         await runner.start(adapter)
-        
+
         adapter.start.assert_called_once()
 
     async def test_stop_blocking_adapter(self):
@@ -238,9 +238,9 @@ class TestBlockingAdapterRunner:
         runner = BlockingAdapterRunner()
         adapter = MagicMock()
         adapter.stop = MagicMock(return_value=None)
-        
+
         await runner.stop(adapter)
-        
+
         adapter.stop.assert_called_once()
 
     async def test_stop_waits_for_futures(self):
@@ -249,32 +249,32 @@ class TestBlockingAdapterRunner:
         adapter = MagicMock()
         adapter.start = MagicMock(return_value=None)
         adapter.stop = MagicMock(return_value=None)
-        
+
         # Start adapter to create a future
         await runner.start(adapter)
-        
+
         # Stop should wait for futures
         await runner.stop(adapter)
-        
+
         adapter.stop.assert_called_once()
 
     def test_shutdown_executor_wait(self):
         """Test shutting down executor with wait=True."""
         runner = BlockingAdapterRunner()
-        
+
         # Should not raise exception
         runner.shutdown(wait=True)
-        
+
         # Executor should be shut down
         assert runner.executor._shutdown
 
     def test_shutdown_executor_no_wait(self):
         """Test shutting down executor with wait=False."""
         runner = BlockingAdapterRunner()
-        
+
         # Should not raise exception
         runner.shutdown(wait=False)
-        
+
         # Executor should be shut down
         assert runner.executor._shutdown
 
@@ -282,18 +282,18 @@ class TestBlockingAdapterRunner:
         """Test initializing with custom executor."""
         executor = ThreadPoolExecutor(max_workers=5)
         runner = BlockingAdapterRunner(executor=executor)
-        
+
         assert runner.executor == executor
-        
+
         runner.shutdown(wait=True)
 
     def test_init_without_executor(self):
         """Test initializing without executor creates new one."""
         runner = BlockingAdapterRunner()
-        
+
         assert runner.executor is not None
         assert isinstance(runner.executor, ThreadPoolExecutor)
-        
+
         runner.shutdown(wait=True)
 
     async def test_start_stores_future(self):
@@ -301,11 +301,11 @@ class TestBlockingAdapterRunner:
         runner = BlockingAdapterRunner()
         adapter = MagicMock()
         adapter.start = MagicMock(return_value=None)
-        
+
         initial_futures_count = len(runner._futures)
-        
+
         await runner.start(adapter)
-        
+
         assert len(runner._futures) == initial_futures_count + 1
 
     async def test_stop_with_multiple_futures(self):
@@ -314,14 +314,14 @@ class TestBlockingAdapterRunner:
         adapter = MagicMock()
         adapter.start = MagicMock(return_value=None)
         adapter.stop = MagicMock(return_value=None)
-        
+
         # Start multiple times to create multiple futures
         await runner.start(adapter)
         await runner.start(adapter)
-        
+
         # Stop should handle all futures
         await runner.stop(adapter)
-        
+
         adapter.stop.assert_called_once()
 
 

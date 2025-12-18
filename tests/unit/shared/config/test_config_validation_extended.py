@@ -16,7 +16,6 @@ from hexswitch.shared.config.config import (
     _validate_nats_client_adapter,
     _validate_websocket_adapter,
     _validate_websocket_client_adapter,
-    validate_config,
 )
 
 

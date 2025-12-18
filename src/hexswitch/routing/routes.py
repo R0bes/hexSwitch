@@ -1,8 +1,8 @@
 """Route registry for inbound and outbound route matching."""
 
+from dataclasses import dataclass
 import logging
 import threading
-from dataclasses import dataclass
 from typing import Any
 
 from hexswitch.shared.envelope import Envelope

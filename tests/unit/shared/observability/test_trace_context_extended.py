@@ -1,6 +1,5 @@
 """Extended unit tests for trace context."""
 
-import pytest
 
 from hexswitch.shared.observability.trace_context import (
     extract_trace_context_from_grpc_metadata,
@@ -55,7 +54,7 @@ class TestTraceContextExtended:
     def test_inject_trace_context_w3c_format(self) -> None:
         """Test injecting trace context in W3C format."""
         from hexswitch.shared.observability.tracing import start_span
-        
+
         headers = {}
         # W3C format requires OpenTelemetry context
         # Start a span to create context

@@ -1,7 +1,6 @@
 """NATS inbound adapter implementation."""
 
 import asyncio
-import importlib
 import logging
 import threading
 from typing import Any
@@ -9,7 +8,6 @@ from typing import Any
 try:
     import nats
     from nats.aio.client import Client as NatsClient
-    from nats.js import api
     NATS_AVAILABLE = True
 except ImportError:
     NATS_AVAILABLE = False
@@ -18,9 +16,7 @@ except ImportError:
 from hexswitch.adapters.base import InboundAdapter
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
 from hexswitch.adapters.nats._Nats_Envelope import NatsEnvelope
-from hexswitch.handlers.loader import HandlerLoader
 from hexswitch.ports import PortError, get_port_registry
-from hexswitch.shared.envelope import Envelope
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +124,7 @@ class NatsAdapterServer(InboundAdapter):
             # Convert NATS message to Envelope
             headers = {}
             if hasattr(msg, "headers") and msg.headers:
-                headers = {k: v for k, v in msg.headers.items()}
+                headers = dict(msg.headers.items())
 
             request_envelope = self._converter.message_to_envelope(
                 subject=subject,

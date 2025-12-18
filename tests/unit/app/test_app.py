@@ -1,11 +1,9 @@
 """Unit tests for HexSwitch CLI application."""
 
 import argparse
-import tempfile
 from pathlib import Path
+import tempfile
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from hexswitch.app import cmd_init, cmd_run, cmd_validate, cmd_version, main
 from hexswitch.shared.config.config import ConfigError

@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from hexswitch.handlers.metrics import metrics_handler
 from hexswitch.shared.envelope import Envelope
 

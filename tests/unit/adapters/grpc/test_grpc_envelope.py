@@ -1,9 +1,8 @@
 """Unit tests for GrpcEnvelope conversion logic."""
 
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import grpc
-import pytest
 
 from hexswitch.adapters.grpc._Grpc_Envelope import GrpcEnvelope
 from hexswitch.shared.envelope import Envelope

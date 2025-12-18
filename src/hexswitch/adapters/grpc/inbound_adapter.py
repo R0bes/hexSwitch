@@ -1,7 +1,6 @@
 """gRPC inbound adapter implementation."""
 
 from concurrent.futures import ThreadPoolExecutor
-import importlib
 import logging
 import os
 from pathlib import Path
@@ -17,7 +16,6 @@ from grpc import server as grpc_server
 from hexswitch.adapters.base import InboundAdapter
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
 from hexswitch.adapters.grpc._Grpc_Envelope import GrpcEnvelope
-from hexswitch.handlers.loader import HandlerLoader
 from hexswitch.ports import PortError, get_port_registry
 from hexswitch.shared.envelope import Envelope
 

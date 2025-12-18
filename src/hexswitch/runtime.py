@@ -16,21 +16,19 @@ from hexswitch.pipeline.middleware.trace import (
     TraceInjectionMiddleware,
 )
 from hexswitch.pipeline.pipeline import Pipeline
-from hexswitch.registry.adapters import ADAPTER_METADATA, AdapterRegistry
-from hexswitch.registry.factory import AdapterFactory
-from hexswitch.gui import GuiServer
 from hexswitch.ports.outbound_registry import OutboundPortRegistry
 from hexswitch.ports.registry import get_port_registry
-from hexswitch.routing.routes import OutboundRouteRegistry, OutboundTarget
-from hexswitch.execution.runner import BlockingAdapterRunner
+from hexswitch.registry.adapters import ADAPTER_METADATA, AdapterRegistry
+from hexswitch.registry.factory import AdapterFactory
+from hexswitch.routing.routes import OutboundRouteRegistry
+from hexswitch.shared.config.config import build_execution_plan
+from hexswitch.shared.envelope import Envelope
 from hexswitch.shared.logging import get_logger
 from hexswitch.shared.observability import (
     get_global_metrics_collector,
     get_global_tracer,
     start_span,
 )
-from hexswitch.shared.config.config import build_execution_plan
-from hexswitch.shared.envelope import Envelope
 
 logger = get_logger(__name__)
 
@@ -62,7 +60,7 @@ class Runtime:
         self._shutdown_event: asyncio.Event | None = None
         self._running_tasks: list[asyncio.Task] = []
         self._registered_ports: list[str] = []  # Track ports registered by this runtime
-        
+
         # Initialize GUI server if enabled
         gui_config = self.config.get("service", {}).get("gui", {})
         if gui_config.get("enabled", False):
@@ -255,7 +253,7 @@ class Runtime:
                 # Get port names from adapter config first, fallback to metadata
                 adapter_config = adapter_config_map.get(outbound_adapter.name, {})
                 port_names = adapter_config.get("ports", [])
-                
+
                 # Support both string and list for ports
                 if isinstance(port_names, str):
                     port_names = [port_names]
@@ -301,7 +299,7 @@ class Runtime:
         if self._executor is None:
             from concurrent.futures import ThreadPoolExecutor
             self._executor = ThreadPoolExecutor(max_workers=10)
-        
+
         if isinstance(adapter, InboundAdapter):
             # Start adapter in executor - this should return quickly after starting threads
             await loop.run_in_executor(self._executor, adapter.start)
@@ -342,7 +340,7 @@ class Runtime:
             # Loop is closed or doesn't exist, create a new one for cleanup
             logger.debug("Event loop is closed or doesn't exist, creating new loop for cleanup")
             self._loop = None
-        
+
         # If we still need to clean up (loop was closed), create a new loop
         if self._loop is None and (self.inbound_adapters or self.outbound_adapters or self.gui_server):
             try:

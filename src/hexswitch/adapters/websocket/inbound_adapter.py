@@ -1,7 +1,6 @@
 """WebSocket inbound adapter implementation."""
 
 import asyncio
-import importlib
 import json
 import logging
 import socket

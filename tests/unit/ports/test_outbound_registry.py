@@ -3,9 +3,7 @@
 import threading
 import time
 
-import pytest
-
-from hexswitch.ports.outbound_registry import OutboundPort, OutboundPortRegistry
+from hexswitch.ports.outbound_registry import OutboundPortRegistry
 from hexswitch.shared.envelope import Envelope
 
 
@@ -96,7 +94,7 @@ def test_outbound_port_registry_thread_safety():
 
     def register_ports():
         for i in range(10):
-            def factory() -> Envelope:
+            def factory(i=i) -> Envelope:  # noqa: B023
                 return Envelope(path=f"/api/{i}")
 
             registry.register_port(f"port_{i}", factory)

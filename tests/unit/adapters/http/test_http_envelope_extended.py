@@ -1,6 +1,5 @@
 """Extended unit tests for HTTP envelope conversion."""
 
-import pytest
 
 from hexswitch.adapters.http._Http_Envelope import HttpEnvelope
 from hexswitch.shared.envelope import Envelope
@@ -154,7 +153,7 @@ class TestHttpEnvelopeExtended:
 
         assert envelope.metadata["session_id"] == "session_abc123"
 
-    def test_request_to_envelope_with_path_params(self) -> None:
+    def test_request_to_envelope_with_path_params_extended(self) -> None:
         """Test converting HTTP request with path parameters."""
         converter = HttpEnvelope()
         envelope = converter.request_to_envelope(

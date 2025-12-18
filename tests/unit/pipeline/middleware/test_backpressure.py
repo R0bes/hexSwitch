@@ -92,17 +92,17 @@ async def test_backpressure_middleware_fail_fast_rejection():
 
     # Start first request (will hold semaphore)
     task1 = asyncio.create_task(middleware(ctx1, slow_next))
-    
+
     # Wait a bit to ensure first request acquires semaphore
     await asyncio.sleep(0.01)
-    
+
     # Second request should be rejected immediately
     result2 = await middleware(ctx2, slow_next)
-    
+
     assert result2.envelope.error_message is not None
     assert "503" in str(result2.envelope.status_code) or result2.envelope.status_code == 503
     assert result2.metadata.get("backpressure_rejected") is True
-    
+
     # Wait for first request to complete
     await task1
 
@@ -131,18 +131,18 @@ async def test_backpressure_middleware_queue_full():
     # Start first request (will hold semaphore)
     task1 = asyncio.create_task(middleware(ctx1, slow_next))
     await asyncio.sleep(0.01)
-    
+
     # Second request should be queued
     task2 = asyncio.create_task(middleware(ctx2, slow_next))
     await asyncio.sleep(0.01)
-    
+
     # Third request should be rejected (queue full)
     result3 = await middleware(ctx3, slow_next)
-    
+
     assert result3.envelope.error_message is not None
     assert "503" in str(result3.envelope.status_code) or result3.envelope.status_code == 503
     assert result3.metadata.get("backpressure_rejected") is True
-    
+
     # Wait for requests to complete
     await task1
     await task2
@@ -169,13 +169,13 @@ async def test_backpressure_middleware_drop_strategy():
     # Start first request (will hold semaphore)
     task1 = asyncio.create_task(middleware(ctx1, slow_next))
     await asyncio.sleep(0.01)
-    
+
     # Second request should be dropped when semaphore is full
     result2 = await middleware(ctx2, slow_next)
-    
+
     assert result2.envelope.error_message is not None
     assert result2.metadata.get("backpressure_dropped") is True
-    
+
     # Wait for first request to complete
     await task1
 

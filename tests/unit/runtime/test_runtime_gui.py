@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from hexswitch.runtime import Runtime
 
 
@@ -71,7 +69,7 @@ class TestRuntimeGui:
 
             if runtime.gui_server:
                 assert runtime.gui_server.start.called
-            
+
             # Ensure cleanup
             runtime.stop()
 

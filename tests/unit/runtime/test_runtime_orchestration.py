@@ -39,7 +39,7 @@ def test_runtime_create_http_adapter() -> None:
 def test_runtime_create_unsupported_inbound_adapter() -> None:
     """Test Runtime with unsupported inbound adapter type."""
     from hexswitch.adapters.exceptions import AdapterError
-    
+
     config = {"service": {"name": "test-service"}}
     runtime = Runtime(config)
     with pytest.raises(AdapterError, match="Unknown adapter"):
@@ -49,7 +49,7 @@ def test_runtime_create_unsupported_inbound_adapter() -> None:
 def test_runtime_create_unsupported_outbound_adapter() -> None:
     """Test Runtime with unsupported outbound adapter type."""
     from hexswitch.adapters.exceptions import AdapterError
-    
+
     config = {"service": {"name": "test-service"}}
     runtime = Runtime(config)
     with pytest.raises(AdapterError, match="Unknown adapter"):

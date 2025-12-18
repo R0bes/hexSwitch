@@ -4,8 +4,6 @@ import logging
 import threading
 from typing import Callable
 
-from hexswitch.shared.envelope import Envelope
-
 logger = logging.getLogger(__name__)
 
 # Global registry instance

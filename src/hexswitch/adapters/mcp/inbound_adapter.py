@@ -133,7 +133,7 @@ class McpRequestHandler(BaseHTTPRequestHandler):
             except (TypeError, AttributeError):
                 # Fallback for mock objects or other non-dict types
                 headers = {}
-        
+
         request_envelope = self._adapter.to_envelope(
             method=method_name,
             params=params,

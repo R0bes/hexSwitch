@@ -2,10 +2,7 @@
 
 import uuid
 
-import pytest
-
 from hexswitch.shared.envelope import Envelope
-from hexswitch.shared.observability.tracing import Span
 
 
 class TestEnvelope:

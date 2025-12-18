@@ -27,30 +27,30 @@ _meter_provider: MeterProvider | None = None
 
 def _should_disable_console_exporter() -> bool:
     """Check if console exporter should be disabled.
-    
+
     Disables console exporter in test environments to reduce noise.
-    
+
     Returns:
         True if console exporter should be disabled, False otherwise.
     """
     # Check environment variable
     if os.getenv("HEXSWITCH_DISABLE_CONSOLE_METRICS", "").lower() in ("1", "true", "yes"):
         return True
-    
+
     # Check if running in pytest
     try:
-        import pytest
+        import pytest  # noqa: F401
         # If pytest is importable, we're likely in a test environment
         # Check if pytest is actually running by checking sys.modules
         if "pytest" in sys.modules:
             return True
     except ImportError:
         pass
-    
+
     # Check if PYTEST_CURRENT_TEST is set (pytest sets this)
     if os.getenv("PYTEST_CURRENT_TEST"):
         return True
-    
+
     return False
 
 
@@ -136,7 +136,7 @@ def _get_meter_provider() -> MeterProvider:
                     SafeConsoleMetricExporter(out=sys.stdout), export_interval_millis=5000
                 )
             ]
-        
+
         _meter_provider = SDKMeterProvider(
             resource=Resource.create({"service.name": "hexswitch"}),
             metric_readers=metric_readers,

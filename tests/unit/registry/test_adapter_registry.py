@@ -3,8 +3,6 @@
 import threading
 import time
 
-import pytest
-
 from hexswitch.adapters.base import InboundAdapter, OutboundAdapter
 from hexswitch.registry.adapters import ADAPTER_METADATA, AdapterRegistry
 

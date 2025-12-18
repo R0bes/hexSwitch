@@ -49,13 +49,13 @@ def cleanup_adapter(adapter, module_name: str | None = None) -> None:
         module_name: Optional module name to remove from sys.modules.
     """
     import asyncio
-    
+
     try:
         time.sleep(0.2)  # Give time for response to complete
         if adapter and hasattr(adapter, 'stop'):
             adapter.stop()
         time.sleep(0.5)  # Give server time to shut down gracefully
-        
+
         # For FastAPI adapters, ensure all tasks are cancelled
         if hasattr(adapter, '_server_loop') and adapter._server_loop:
             try:

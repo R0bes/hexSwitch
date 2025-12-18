@@ -1,19 +1,18 @@
 """Unit tests for MCP inbound adapter."""
 
+from io import BytesIO
 import json
 import sys
 import time
-from http.server import HTTPServer
-from io import BytesIO
 from types import ModuleType
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
-from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
+from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError
 from hexswitch.adapters.mcp.inbound_adapter import McpAdapterServer, McpRequestHandler
 from hexswitch.handlers.loader import HandlerLoader
-from hexswitch.ports import PortError, get_port_registry
+from hexswitch.ports import get_port_registry
 from hexswitch.shared.envelope import Envelope
 
 
