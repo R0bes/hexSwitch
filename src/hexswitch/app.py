@@ -5,7 +5,8 @@ from pathlib import Path
 import sys
 
 from hexswitch import __version__
-from hexswitch.runtime import build_execution_plan, print_execution_plan, run_runtime
+from hexswitch.shared.config.config import build_execution_plan
+from hexswitch.runtime import Runtime
 from hexswitch.shared.config import (
     DEFAULT_CONFIG_PATH,
     ConfigError,
@@ -108,13 +109,30 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     if args.dry_run:
         # Dry-run mode: print execution plan
-        print_execution_plan(plan)
+        logger.info(f"Execution plan for service '{plan['service']}':")
+        logger.info(f"  Inbound adapters: {len(plan['inbound_adapters'])}")
+        for adapter in plan["inbound_adapters"]:
+            logger.info(f"    - {adapter['name']}")
+        logger.info(f"  Outbound adapters: {len(plan['outbound_adapters'])}")
+        for adapter in plan["outbound_adapters"]:
+            logger.info(f"    - {adapter['name']}")
+        logger.info("Ready to start runtime")
         return 0
 
     # Run mode: start runtime
     try:
         logger.info(f"Starting HexSwitch runtime with config: {config_path}")
-        run_runtime(config)
+        runtime = Runtime(config)
+        runtime.start()
+        try:
+            # Keep running until interrupted
+            import time
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Shutting down...")
+        finally:
+            runtime.stop()
         return 0
     except Exception as e:
         logger.error(f"Runtime failure: {e}")

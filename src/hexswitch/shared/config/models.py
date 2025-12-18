@@ -1,8 +1,16 @@
 """Pydantic models for configuration validation."""
 
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+class GuiConfig(BaseModel):
+    """GUI configuration."""
+
+    enabled: bool = Field(False, description="Enable GUI server")
+    port: int = Field(8080, ge=1, le=65535, description="GUI server port")
 
 
 class ServiceConfig(BaseModel):
@@ -11,6 +19,7 @@ class ServiceConfig(BaseModel):
     name: str = Field(..., description="Service name")
     version: str | None = Field(None, description="Service version")
     runtime: str = Field("python", description="Runtime type")
+    gui: GuiConfig | None = Field(None, description="GUI configuration")
 
 
 class HttpRouteConfig(BaseModel):
@@ -51,6 +60,9 @@ class HttpInboundConfig(BaseModel):
     routes: list[HttpRouteConfig] = Field(
         default_factory=list, description="HTTP routes"
     )
+    enable_default_routes: bool = Field(
+        True, description="Enable default health and metrics routes"
+    )
 
 
 class HttpClientConfig(BaseModel):
@@ -60,6 +72,7 @@ class HttpClientConfig(BaseModel):
     base_url: str | None = Field(None, description="Base URL for HTTP client")
     timeout: float | int = Field(30.0, gt=0, description="Request timeout in seconds")
     headers: dict[str, str] | None = Field(None, description="Default headers")
+    ports: list[str] | None = Field(None, description="List of port names to register this adapter on")
 
 
 class McpClientConfig(BaseModel):
@@ -162,12 +175,55 @@ class WebSocketClientConfig(BaseModel):
     )
 
 
+class NatsSubjectConfig(BaseModel):
+    """NATS subject configuration."""
+
+    subject: str = Field(..., description="NATS subject to subscribe to")
+    handler: str | None = Field(None, description="Handler function path")
+    port: str | None = Field(None, description="Port name")
+
+    @model_validator(mode="after")
+    def validate_handler_or_port(self) -> "NatsSubjectConfig":
+        """Ensure either handler or port is provided."""
+        if self.handler is None and self.port is None:
+            raise ValueError("Either 'handler' or 'port' must be provided")
+        if self.handler and ":" not in self.handler:
+            raise ValueError(
+                "Handler must be in format 'module.path:function_name'"
+            )
+        return self
+
+
+class NatsInboundConfig(BaseModel):
+    """NATS inbound adapter configuration."""
+
+    enabled: bool = Field(False, description="Enable NATS adapter")
+    servers: list[str] | str = Field(
+        ["nats://localhost:4222"], description="NATS server URLs"
+    )
+    subjects: list[NatsSubjectConfig] = Field(
+        default_factory=list, description="NATS subjects to subscribe to"
+    )
+    queue_group: str | None = Field(None, description="Queue group for load balancing")
+
+
+class NatsClientConfig(BaseModel):
+    """NATS client adapter configuration."""
+
+    enabled: bool = Field(False, description="Enable NATS client adapter")
+    servers: list[str] | str = Field(
+        ["nats://localhost:4222"], description="NATS server URLs"
+    )
+    timeout: float | int = Field(30.0, gt=0, description="Request timeout in seconds")
+
+
 class InboundConfig(BaseModel):
     """Inbound adapters configuration."""
 
     http: HttpInboundConfig | None = None
     grpc: GrpcInboundConfig | None = None
     websocket: WebSocketInboundConfig | None = None
+    nats: NatsInboundConfig | None = None
 
 
 class OutboundConfig(BaseModel):
@@ -177,6 +233,68 @@ class OutboundConfig(BaseModel):
     grpc_client: GrpcClientConfig | None = None
     websocket_client: WebSocketClientConfig | None = None
     mcp_client: McpClientConfig | None = None
+    nats_client: NatsClientConfig | None = None
+
+
+class RoutingStrategy(str, Enum):
+    """Routing strategy options."""
+
+    FIRST = "first"
+    BROADCAST = "broadcast"
+    ROUND_ROBIN = "round_robin"
+
+
+class RetryPolicy(BaseModel):
+    """Retry policy configuration."""
+
+    enabled: bool = Field(False, description="Enable retry")
+    max_attempts: int = Field(3, ge=1, description="Maximum retry attempts")
+    initial_delay: float = Field(1.0, ge=0, description="Initial delay in seconds")
+    max_delay: float = Field(60.0, ge=0, description="Maximum delay in seconds")
+    backoff_multiplier: float = Field(2.0, ge=1.0, description="Backoff multiplier")
+    retryable_errors: list[str] = Field(
+        default_factory=lambda: ["500", "502", "503", "504", "timeout"],
+        description="List of retryable error codes/types",
+    )
+
+
+class TimeoutPolicy(BaseModel):
+    """Timeout policy configuration."""
+
+    enabled: bool = Field(False, description="Enable timeout")
+    timeout_seconds: float = Field(30.0, gt=0, description="Timeout in seconds")
+
+
+class BackpressurePolicy(BaseModel):
+    """Backpressure policy configuration."""
+
+    enabled: bool = Field(False, description="Enable backpressure")
+    max_concurrent: int = Field(10, ge=1, description="Maximum concurrent requests")
+    queue_size: int = Field(100, ge=0, description="Maximum queue size")
+    rejection_strategy: str = Field(
+        "fail_fast", description="Rejection strategy: fail_fast, queue, or drop"
+    )
+
+
+class RoutingPolicies(BaseModel):
+    """Routing policies configuration."""
+
+    retry: RetryPolicy | None = Field(None, description="Retry policy")
+    timeout: TimeoutPolicy | None = Field(None, description="Timeout policy")
+    backpressure: BackpressurePolicy | None = Field(
+        None, description="Backpressure policy"
+    )
+
+
+class PortConfig(BaseModel):
+    """Port-specific configuration."""
+
+    routing_strategy: RoutingStrategy | None = Field(
+        None, description="Routing strategy for this port"
+    )
+    policies: RoutingPolicies | None = Field(
+        None, description="Routing policies for this port"
+    )
 
 
 class LoggingConfig(BaseModel):
@@ -192,6 +310,9 @@ class ConfigModel(BaseModel):
     inbound: InboundConfig | None = None
     outbound: OutboundConfig | None = None
     logging: LoggingConfig | None = None
+    ports: dict[str, PortConfig] | None = Field(
+        None, description="Port-specific configuration"
+    )
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ConfigModel":
@@ -215,6 +336,8 @@ class ConfigModel(BaseModel):
                 parsed_inbound["websocket"] = WebSocketInboundConfig(
                     **inbound_data["websocket"]
                 )
+            if "nats" in inbound_data:
+                parsed_inbound["nats"] = NatsInboundConfig(**inbound_data["nats"])
             data["inbound"] = InboundConfig(**parsed_inbound) if parsed_inbound else None
 
         if "outbound" in data and isinstance(data["outbound"], dict):
@@ -236,6 +359,10 @@ class ConfigModel(BaseModel):
                 parsed_outbound["mcp_client"] = McpClientConfig(
                     **outbound_data["mcp_client"]
                 )
+            if "nats_client" in outbound_data:
+                parsed_outbound["nats_client"] = NatsClientConfig(
+                    **outbound_data["nats_client"]
+                )
             data["outbound"] = (
                 OutboundConfig(**parsed_outbound) if parsed_outbound else None
             )
@@ -252,4 +379,12 @@ class ConfigModel(BaseModel):
             Configuration dictionary.
         """
         return self.model_dump(exclude_none=True)
+
+
+# Rebuild models to resolve forward references after all classes are defined
+InboundConfig.model_rebuild()
+OutboundConfig.model_rebuild()
+PortConfig.model_rebuild()
+RoutingPolicies.model_rebuild()
+ConfigModel.model_rebuild()
 

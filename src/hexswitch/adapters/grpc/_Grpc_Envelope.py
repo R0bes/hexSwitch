@@ -13,6 +13,7 @@ from hexswitch.shared.observability.trace_context import (
 class GrpcEnvelope:
     """gRPC ↔ Envelope conversion logic for inbound and outbound adapters."""
 
+    @staticmethod
     def request_to_envelope(
         request: Any,
         context: Any,
@@ -97,6 +98,7 @@ class GrpcEnvelope:
         """
         return envelope.body or {}
 
+    @staticmethod
     def response_to_envelope(
         response: Any,
         original_envelope: Envelope | None = None,
@@ -132,6 +134,7 @@ class GrpcEnvelope:
             parent_span_id=original_envelope.parent_span_id if original_envelope else None,
         )
 
+    @staticmethod
     def error_to_envelope(
         status_code: grpc.StatusCode,
         error_message: str,

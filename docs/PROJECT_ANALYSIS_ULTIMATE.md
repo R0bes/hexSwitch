@@ -1,9 +1,28 @@
+---
+layout: default
+title: HexSwitch - Ultimate Level Projektanalyse
+---
+
+<div class="hexswitch-header">
+  <div class="hexswitch-header-content">
+    <div class="hexswitch-logo-container">
+      <img src="{{ '/assets/logo.png' | relative_url }}" alt="HexSwitch Logo" class="hexswitch-logo" />
+      <div class="hexswitch-title-group">
+        <h1 class="hexswitch-title">HexSwitch</h1>
+        <p class="hexswitch-tagline">Ultimate Level Projektanalyse</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hexswitch-content">
+
 # HexSwitch - Ultimate Level Projektanalyse
 
 **Analysedatum:** 2025-12-17  
-**Analysestufe:** Ultimate  
+**Analysestufe:** <span class="badge badge-info">Ultimate</span>  
 **Projekt:** HexSwitch - Hexagonal Runtime Switchboard  
-**Version:** 0.1.0 (Alpha)
+**Version:** 0.1.0 <span class="badge badge-warning">Alpha</span>
 
 ---
 
@@ -515,3 +534,9 @@ tests/
 **Analysiert von:** AI Assistant (Ultimate Level)  
 **Nächste Review empfohlen:** Nach Implementierung der kurzfristigen Verbesserungen  
 **Letzte Aktualisierung:** 2025-12-17
+
+</div>
+
+<div class="hexswitch-footer">
+  <p>© 2025 HexSwitch | MIT License</p>
+</div>

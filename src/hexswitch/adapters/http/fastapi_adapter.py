@@ -36,9 +36,11 @@ class FastApiHttpAdapterServer(InboundAdapter):
         self.port = config.get("port", 8000)
         self.base_path = config.get("base_path", "")
         self.routes = config.get("routes", [])
+        self.enable_default_routes = config.get("enable_default_routes", True)
 
         # Create FastAPI app
         self.app = FastAPI(title="HexSwitch", version="0.1.0")
+        self._setup_default_routes()
         self._setup_routes()
 
         # OpenTelemetry instrumentation
@@ -57,6 +59,169 @@ class FastApiHttpAdapterServer(InboundAdapter):
         self._server: uvicorn.Server | None = None
         self._server_loop: asyncio.AbstractEventLoop | None = None
         self._server_thread: threading.Thread | None = None
+
+    def _setup_default_routes(self) -> None:
+        """Set up default health and metrics routes."""
+        if not self.enable_default_routes:
+            return
+
+        try:
+            from hexswitch.handlers.health import (
+                health_handler,
+                liveness_handler,
+                readiness_handler,
+            )
+            from hexswitch.handlers.metrics import metrics_handler
+
+            port_registry = get_port_registry()
+
+            # Helper to create async wrapper for sync handlers
+            def create_async_handler(sync_handler):
+                async def async_handler(request: Request) -> Response:
+                    try:
+                        # Create envelope from request
+                        body = await request.body()
+                        query_params = dict(request.query_params)
+                        headers = dict(request.headers)
+
+                        request_envelope = self._converter.request_to_envelope(
+                            method=request.method,
+                            path=request.url.path,
+                            headers=headers,
+                            query_params=query_params,
+                            body=body,
+                        )
+
+                        # Call sync handler in thread pool
+                        loop = asyncio.get_event_loop()
+                        response_envelope = await loop.run_in_executor(
+                            None, sync_handler, request_envelope
+                        )
+
+                        # Convert Envelope to FastAPI response
+                        (
+                            status_code,
+                            data,
+                            response_headers,
+                        ) = self._converter.envelope_to_response(response_envelope)
+
+                        return JSONResponse(
+                            content=data,
+                            status_code=status_code,
+                            headers=response_headers,
+                        )
+                    except Exception as e:
+                        logger.exception(f"Default route handler error: {e}")
+                        return JSONResponse(
+                            {"error": "Internal Server Error", "message": str(e)},
+                            status_code=500,
+                        )
+
+                return async_handler
+
+            # Register health endpoints
+            base = self.base_path.rstrip("/")
+            health_path = f"{base}/health" if base else "/health"
+            live_path = f"{base}/health/live" if base else "/health/live"
+            ready_path = f"{base}/health/ready" if base else "/health/ready"
+            metrics_path = f"{base}/metrics" if base else "/metrics"
+
+            # Try to get handlers from port registry first, fallback to direct import
+            try:
+                health_port_handler = port_registry.get_handler("__health__")
+                self.app.add_api_route(health_path, create_async_handler(health_port_handler), methods=["GET"])
+            except PortError:
+                self.app.add_api_route(health_path, create_async_handler(health_handler), methods=["GET"])
+
+            try:
+                live_port_handler = port_registry.get_handler("__live__")
+                self.app.add_api_route(live_path, create_async_handler(live_port_handler), methods=["GET"])
+            except PortError:
+                self.app.add_api_route(live_path, create_async_handler(liveness_handler), methods=["GET"])
+
+            try:
+                ready_port_handler = port_registry.get_handler("__ready__")
+                self.app.add_api_route(ready_path, create_async_handler(ready_port_handler), methods=["GET"])
+            except PortError:
+                self.app.add_api_route(ready_path, create_async_handler(readiness_handler), methods=["GET"])
+
+            # Metrics endpoint needs special handling for Prometheus format
+            try:
+                metrics_port_handler = port_registry.get_handler("__metrics__")
+                async def metrics_route_handler(request: Request) -> Response:
+                    try:
+                        body = await request.body()
+                        query_params = dict(request.query_params)
+                        headers = dict(request.headers)
+
+                        request_envelope = self._converter.request_to_envelope(
+                            method=request.method,
+                            path=request.url.path,
+                            headers=headers,
+                            query_params=query_params,
+                            body=body,
+                        )
+
+                        loop = asyncio.get_event_loop()
+                        response_envelope = await loop.run_in_executor(
+                            None, metrics_port_handler, request_envelope
+                        )
+
+                        # Metrics returns Prometheus format in data["metrics"]
+                        metrics_text = response_envelope.data.get("metrics", "")
+                        return Response(
+                            content=metrics_text,
+                            status_code=200,
+                            headers={"Content-Type": "text/plain; version=0.0.4"},
+                        )
+                    except Exception as e:
+                        logger.exception(f"Metrics handler error: {e}")
+                        return JSONResponse(
+                            {"error": "Internal Server Error", "message": str(e)},
+                            status_code=500,
+                        )
+
+                self.app.add_api_route(metrics_path, metrics_route_handler, methods=["GET"])
+            except PortError:
+                async def metrics_route_handler_direct(request: Request) -> Response:
+                    try:
+                        body = await request.body()
+                        query_params = dict(request.query_params)
+                        headers = dict(request.headers)
+
+                        request_envelope = self._converter.request_to_envelope(
+                            method=request.method,
+                            path=request.url.path,
+                            headers=headers,
+                            query_params=query_params,
+                            body=body,
+                        )
+
+                        loop = asyncio.get_event_loop()
+                        response_envelope = await loop.run_in_executor(
+                            None, metrics_handler, request_envelope
+                        )
+
+                        metrics_text = response_envelope.data.get("metrics", "")
+                        return Response(
+                            content=metrics_text,
+                            status_code=200,
+                            headers={"Content-Type": "text/plain; version=0.0.4"},
+                        )
+                    except Exception as e:
+                        logger.exception(f"Metrics handler error: {e}")
+                        return JSONResponse(
+                            {"error": "Internal Server Error", "message": str(e)},
+                            status_code=500,
+                        )
+
+                self.app.add_api_route(metrics_path, metrics_route_handler_direct, methods=["GET"])
+
+            logger.debug("Default health and metrics routes registered")
+        except ImportError as e:
+            logger.warning(f"Could not import default handlers: {e}. Default routes not registered.")
+        except Exception as e:
+            logger.warning(f"Failed to set up default routes: {e}")
 
     def _setup_routes(self) -> None:
         """Set up FastAPI routes from configuration."""
@@ -224,9 +389,19 @@ class FastApiHttpAdapterServer(InboundAdapter):
             if self._server_task and not self._server_task.done():
                 self._server_task.cancel()
 
-            # Stop the event loop gracefully
+            # Stop the event loop gracefully and cancel all pending tasks
             if self._server_loop and self._server_loop.is_running():
                 try:
+                    # Cancel all pending tasks before stopping the loop
+                    pending_tasks = [task for task in asyncio.all_tasks(self._server_loop) if not task.done()]
+                    for task in pending_tasks:
+                        task.cancel()
+                    
+                    # Wait briefly for tasks to be cancelled
+                    if pending_tasks:
+                        import time
+                        time.sleep(0.1)
+                    
                     # Schedule loop stop in a thread-safe way
                     self._server_loop.call_soon_threadsafe(self._server_loop.stop)
                     # Wait briefly for loop to stop

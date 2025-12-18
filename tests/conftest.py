@@ -25,6 +25,13 @@ except ImportError:
     # Tests will rely on subprocess timeouts instead
     pass
 
+# Import pytest-asyncio to enable async test support
+try:
+    import pytest_asyncio  # noqa: F401
+except ImportError:
+    # pytest-asyncio not installed, async tests will fail
+    pass
+
 
 # Auto-mark tests based on directory structure
 def pytest_collection_modifyitems(config, items):

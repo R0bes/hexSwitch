@@ -2,11 +2,8 @@
 
 import pytest
 
-from hexswitch.runtime import (
-    Runtime,
-    build_execution_plan,
-    print_execution_plan,
-)
+from hexswitch.runtime import Runtime
+from hexswitch.shared.config.config import build_execution_plan
 
 
 def test_build_execution_plan_minimal() -> None:
@@ -65,53 +62,46 @@ def test_build_execution_plan_missing_service_name() -> None:
     assert plan["service"] == "unknown"
 
 
-def test_print_execution_plan(caplog: pytest.LogCaptureFixture) -> None:
-    """Test printing execution plan."""
-    import logging
+def test_build_execution_plan_verbose_output() -> None:
+    """Test that execution plan contains expected information."""
+    config = {
+        "service": {"name": "test-service"},
+        "inbound": {
+            "http": {"enabled": True, "base_path": "/api"},
+        },
+        "outbound": {
+            "postgres": {"enabled": True, "dsn": "postgresql://localhost/db"},
+        },
+    }
 
-    with caplog.at_level(logging.INFO):
-        plan = {
-            "service": "test-service",
-            "inbound_adapters": [{"name": "http", "config": {"enabled": True}}],
-            "outbound_adapters": [{"name": "postgres", "config": {"enabled": True}}],
-        }
+    plan = build_execution_plan(config)
 
-        print_execution_plan(plan)
-
-        assert "test-service" in caplog.text
-        assert "http" in caplog.text
-        assert "postgres" in caplog.text
-        assert "Ready to start runtime" in caplog.text
+    assert plan["service"] == "test-service"
+    assert len(plan["inbound_adapters"]) == 1
+    assert plan["inbound_adapters"][0]["name"] == "http"
+    assert len(plan["outbound_adapters"]) == 1
+    assert plan["outbound_adapters"][0]["name"] == "postgres"
 
 
 @pytest.mark.timeout(10)
-def test_run_runtime_minimal_config() -> None:
-    """Test run_runtime with minimal configuration."""
-    import threading
-
+def test_runtime_minimal_config() -> None:
+    """Test Runtime with minimal configuration."""
     config = {"service": {"name": "test-service"}}
     runtime = Runtime(config)
 
     try:
         runtime.start()
-        runtime.request_shutdown()
-
-        # Run in thread with timeout to avoid hanging
-        run_thread = threading.Thread(target=runtime.run, daemon=True)
-        run_thread.start()
-        run_thread.join(timeout=2.0)
-
-        # Should have exited quickly due to shutdown request
-        assert not run_thread.is_alive() or runtime._shutdown_requested
+        # Runtime should start successfully
+        assert len(runtime.inbound_adapters) == 0
+        assert len(runtime.outbound_adapters) == 0
     finally:
         runtime.stop()
 
 
 @pytest.mark.timeout(15)
-def test_run_runtime_with_http_adapter() -> None:
-    """Test run_runtime with HTTP adapter."""
+def test_runtime_with_http_adapter() -> None:
+    """Test Runtime with HTTP adapter."""
     import socket
-    import threading
     import time
 
     # Find a free port
@@ -134,15 +124,9 @@ def test_run_runtime_with_http_adapter() -> None:
     try:
         runtime.start()
         time.sleep(0.1)  # Give adapter time to start
-        runtime.request_shutdown()
-
-        # Run in thread with timeout to avoid hanging
-        run_thread = threading.Thread(target=runtime.run, daemon=True)
-        run_thread.start()
-        run_thread.join(timeout=2.0)
-
-        # Should have exited quickly due to shutdown request
-        assert not run_thread.is_alive() or runtime._shutdown_requested
+        # Runtime should start successfully with HTTP adapter
+        assert len(runtime.inbound_adapters) == 1
+        assert runtime.inbound_adapters[0].name == "http"
     finally:
         runtime.stop()
 

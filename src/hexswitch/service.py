@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 
-class HexSwitchService(ABC):
+class HexSwitchServer(ABC):
     """Base class for all HexSwitch services."""
 
     @abstractmethod

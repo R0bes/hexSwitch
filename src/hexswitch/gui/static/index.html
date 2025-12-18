@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HexSwitch Admin GUI</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>HexSwitch Admin GUI</h1>
+            <p>Runtime Management Dashboard</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-button active" data-tab="overview">Overview</button>
+            <button class="tab-button" data-tab="ports">Ports</button>
+            <button class="tab-button" data-tab="handlers">Handlers</button>
+            <button class="tab-button" data-tab="adapters">Adapters</button>
+            <button class="tab-button" data-tab="metrics">Metrics</button>
+        </nav>
+
+        <main>
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <h2>System Overview</h2>
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h3>Health Status</h3>
+                        <div id="health-status" class="status-indicator">Loading...</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Active Adapters</h3>
+                        <div id="adapter-count" class="status-value">-</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Registered Ports</h3>
+                        <div id="port-count" class="status-value">-</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Registered Handlers</h3>
+                        <div id="handler-count" class="status-value">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ports Tab -->
+            <div id="ports" class="tab-content">
+                <h2>Port Registry</h2>
+                <div id="ports-list" class="data-list">
+                    <p>Loading ports...</p>
+                </div>
+            </div>
+
+            <!-- Handlers Tab -->
+            <div id="handlers" class="tab-content">
+                <h2>Handler Registry</h2>
+                <div id="handlers-list" class="data-list">
+                    <p>Loading handlers...</p>
+                </div>
+            </div>
+
+            <!-- Adapters Tab -->
+            <div id="adapters" class="tab-content">
+                <h2>Adapter Status</h2>
+                <div id="adapters-list" class="data-list">
+                    <p>Loading adapters...</p>
+                </div>
+            </div>
+
+            <!-- Metrics Tab -->
+            <div id="metrics" class="tab-content">
+                <h2>Metrics</h2>
+                <div id="metrics-display" class="metrics-display">
+                    <pre id="metrics-content">Loading metrics...</pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
+

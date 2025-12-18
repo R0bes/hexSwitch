@@ -8,14 +8,25 @@ plugins:
 # GitHub Pages settings
 github: [metadata]
 
+# Base URL for GitHub Pages
+baseurl: "/hexSwitch"
+url: "https://r0bes.github.io"
+
+# Logo and Assets
+logo: "/hexSwitch/assets/logo.png"
+
+# Custom CSS
+head_includes:
+  - <link rel="stylesheet" href="{{ '/assets/custom.css' | relative_url }}">
+
 # Navigation
 navigation:
   - title: Home
     url: /
   - title: Architecture
-    url: /architecture_overview.html
+    url: /hexSwitch/architecture_overview.html
   - title: Development
-    url: /development_guide.html
+    url: /hexSwitch/development_guide.html
   - title: Documentation
-    url: /PROJECT_DOCUMENTATION.html
+    url: /hexSwitch/PROJECT_DOCUMENTATION.html
 

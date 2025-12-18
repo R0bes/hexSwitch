@@ -145,7 +145,8 @@ def test_runtime_graceful_shutdown() -> None:
         runtime.request_shutdown()
 
         # Run in thread with timeout to avoid hanging
-        run_thread = threading.Thread(target=runtime.run, daemon=True)
+        # Use run_sync() instead of run() since run() is async
+        run_thread = threading.Thread(target=runtime.run_sync, daemon=True)
         run_thread.start()
         run_thread.join(timeout=2.0)
 

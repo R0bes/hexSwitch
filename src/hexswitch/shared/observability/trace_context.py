@@ -44,9 +44,12 @@ def extract_trace_context_from_headers(headers: dict[str, str]) -> dict[str, str
         Dictionary with trace_id, span_id, parent_span_id (or None if not found).
     """
     # Try W3C Trace Context format first using OpenTelemetry
+    # Normalize headers to lowercase for case-insensitive matching
+    normalized_headers = {k.lower(): v for k, v in headers.items()}
     propagator = TraceContextTextMapPropagator()
     try:
-        context = propagator.extract(carrier=headers)
+        # OpenTelemetry expects lowercase header names
+        context = propagator.extract(carrier=normalized_headers)
         span_context = trace.get_current_span(context).get_span_context()
 
         if span_context.is_valid:

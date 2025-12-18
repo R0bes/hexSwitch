@@ -163,7 +163,8 @@ def test_runtime_graceful_shutdown_complete() -> None:
     # Run should exit quickly
     import threading
 
-    run_thread = threading.Thread(target=runtime.run)
+    # Use run_sync() instead of run() since run() is async
+    run_thread = threading.Thread(target=runtime.run_sync)
     run_thread.start()
     run_thread.join(timeout=2.0)
 

@@ -1,8 +1,27 @@
+---
+layout: default
+title: HexSwitch - Implementierungsplan
+---
+
+<div class="hexswitch-header">
+  <div class="hexswitch-header-content">
+    <div class="hexswitch-logo-container">
+      <img src="{{ '/assets/logo.png' | relative_url }}" alt="HexSwitch Logo" class="hexswitch-logo" />
+      <div class="hexswitch-title-group">
+        <h1 class="hexswitch-title">HexSwitch</h1>
+        <p class="hexswitch-tagline">Implementierungsplan basierend auf Ultimate-Analyse</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hexswitch-content">
+
 # HexSwitch - Implementierungsplan basierend auf Ultimate-Analyse
 
 **Erstellt:** 2025-12-13  
 **Basis:** PROJECT_ANALYSIS_ULTIMATE.md  
-**Priorität:** Ultimate Level
+**Priorität:** <span class="badge badge-info">Ultimate Level</span>
 
 ---
 
@@ -445,5 +464,10 @@ Erweiterte Observability-Features.
 
 **Erstellt von:** AI Assistant (Workflow Manager)  
 **Basiert auf:** PROJECT_ANALYSIS_ULTIMATE.md  
-**Status:** Ready for Implementation
+**Status:** <span class="badge badge-success">Ready for Implementation</span>
 
+</div>
+
+<div class="hexswitch-footer">
+  <p>© 2025 HexSwitch | MIT License</p>
+</div>

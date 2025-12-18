@@ -208,11 +208,15 @@ def test_cli_run_starts_runtime() -> None:
     """Test that 'run' command starts runtime (with timeout to avoid hanging)."""
     import signal
     import time
+    import shutil
 
     config_data = {"service": {"name": "test-service"}}
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = Path(tmpdir) / "hex-config.yaml"
+    # Create temporary directory and config file
+    tmpdir = tempfile.mkdtemp()
+    config_path = Path(tmpdir) / "hex-config.yaml"
+    
+    try:
         with config_path.open("w") as f:
             yaml.dump(config_data, f)
 
@@ -254,12 +258,40 @@ def test_cli_run_starts_runtime() -> None:
                     process.kill()
                     process.wait()
         finally:
-            # Ensure process is always terminated
+            # Ensure process is always terminated and wait for it to fully exit
             if process.poll() is None:
                 try:
-                    process.terminate()
+                    if sys.platform == "win32":
+                        process.terminate()
+                    else:
+                        process.send_signal(signal.SIGTERM)
                     process.wait(timeout=1)
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
+            
+            # On Windows, wait a bit longer to ensure file handles are released
+            if sys.platform == "win32":
+                time.sleep(0.2)
+            
+            # Close stdout/stderr to release file handles
+            if process.stdout:
+                process.stdout.close()
+            if process.stderr:
+                process.stderr.close()
+    finally:
+        # Clean up temporary directory
+        # On Windows, retry deletion if it fails due to file locks
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                shutil.rmtree(tmpdir)
+                break
+            except (PermissionError, OSError) as e:
+                if attempt < max_retries - 1:
+                    time.sleep(0.1)
+                else:
+                    # Last attempt failed - log but don't fail the test
+                    import warnings
+                    warnings.warn(f"Could not delete temporary directory {tmpdir}: {e}")
 

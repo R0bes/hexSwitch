@@ -16,7 +16,6 @@ class BaseRepositoryPort(ABC, Generic[T]):
         class ExampleRepositoryPort(BaseRepositoryPort[ExampleEntity]):
             @abstractmethod
             def find_by_name(self, name: str) -> Optional[ExampleEntity]:
-                pass
     """
 
     @abstractmethod
@@ -29,7 +28,6 @@ class BaseRepositoryPort(ABC, Generic[T]):
         Returns:
             Saved entity.
         """
-        pass
 
     @abstractmethod
     def find_by_id(self, entity_id: str) -> Optional[T]:
@@ -41,7 +39,6 @@ class BaseRepositoryPort(ABC, Generic[T]):
         Returns:
             Entity if found, None otherwise.
         """
-        pass
 
     @abstractmethod
     def list_all(self) -> List[T]:
@@ -50,7 +47,6 @@ class BaseRepositoryPort(ABC, Generic[T]):
         Returns:
             List of all entities.
         """
-        pass
 
     @abstractmethod
     def delete(self, entity_id: str) -> bool:
@@ -62,7 +58,6 @@ class BaseRepositoryPort(ABC, Generic[T]):
         Returns:
             True if deleted, False if not found.
         """
-        pass
 
 
 class BaseRepository(BaseRepositoryPort[T], Generic[T]):
@@ -75,7 +70,9 @@ class BaseRepository(BaseRepositoryPort[T], Generic[T]):
         class ExampleRepository(BaseRepository[ExampleEntity]):
             def find_by_name(self, name: str) -> Optional[ExampleEntity]:
                 # Custom implementation
-                return next((e for e in self._storage.values() if e.name == name), None)
+                return next(
+                    (e for e in self._storage.values() if e.name == name), None
+                )
     """
 
     def __init__(self) -> None:
@@ -167,4 +164,3 @@ class BaseRepository(BaseRepositoryPort[T], Generic[T]):
             NotImplementedError: If not overridden by subclass.
         """
         raise NotImplementedError("Subclasses must implement from_dict()")
-

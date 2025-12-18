@@ -27,7 +27,7 @@ def wait_for_server_ready(port: int, max_attempts: int = 20, timeout: float = 0.
     Raises:
         AssertionError: If server does not become ready within max_attempts.
     """
-    for _ in range(max_attempts):
+    for attempt in range(max_attempts):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(timeout)
@@ -36,7 +36,8 @@ def wait_for_server_ready(port: int, max_attempts: int = 20, timeout: float = 0.
                     return
         except Exception:
             pass
-        time.sleep(0.1)
+        # Exponential backoff to avoid busy waiting
+        time.sleep(min(0.1 * (1.1 ** attempt), 0.5))
     pytest.fail(f"Server on port {port} did not become ready after {max_attempts} attempts")
 
 
@@ -47,11 +48,27 @@ def cleanup_adapter(adapter, module_name: str | None = None) -> None:
         adapter: Adapter instance to stop.
         module_name: Optional module name to remove from sys.modules.
     """
+    import asyncio
+    
     try:
         time.sleep(0.2)  # Give time for response to complete
         if adapter and hasattr(adapter, 'stop'):
             adapter.stop()
         time.sleep(0.5)  # Give server time to shut down gracefully
+        
+        # For FastAPI adapters, ensure all tasks are cancelled
+        if hasattr(adapter, '_server_loop') and adapter._server_loop:
+            try:
+                # Cancel any remaining tasks
+                if not adapter._server_loop.is_closed():
+                    pending_tasks = [task for task in asyncio.all_tasks(adapter._server_loop) if not task.done()]
+                    for task in pending_tasks:
+                        task.cancel()
+                    # Wait briefly for cancellation
+                    if pending_tasks:
+                        time.sleep(0.1)
+            except Exception:
+                pass
     except Exception:
         pass  # Ignore errors during cleanup
 

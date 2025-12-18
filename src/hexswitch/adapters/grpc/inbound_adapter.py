@@ -17,6 +17,7 @@ from grpc import server as grpc_server
 from hexswitch.adapters.base import InboundAdapter
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
 from hexswitch.adapters.grpc._Grpc_Envelope import GrpcEnvelope
+from hexswitch.handlers.loader import HandlerLoader
 from hexswitch.ports import PortError, get_port_registry
 from hexswitch.shared.envelope import Envelope
 
@@ -167,6 +168,7 @@ class GrpcAdapterServer(InboundAdapter):
         self.services = config.get("services", [])
         self._compiled_proto_dir: str | None = None
         self._handler_map: dict[str, dict[str, Any]] = {}
+        self._handler_loader = None  # Will be set by runtime if available
 
     def _load_handlers(self) -> None:
         """Load all handler functions for configured services."""
@@ -187,23 +189,35 @@ class GrpcAdapterServer(InboundAdapter):
                     continue
 
                 try:
-                    # Support both "handler:" and "port:" in config
-                    if port_name:
-                        handler = get_port_registry().get_handler(port_name)
-                        logger.debug(f"Loaded port '{port_name}' for {service_name}.{method_name}")
+                    # Use handler loader if available, otherwise fall back to old method
+                    if self._handler_loader:
+                        # Support both "handler:" and "port:" in config
+                        if port_name:
+                            handler = self._handler_loader.resolve(port_name)
+                        elif handler_path:
+                            handler = self._handler_loader.resolve(handler_path)
+                        else:
+                            continue
+                        logger.debug(f"Loaded handler for {service_name}.{method_name} via HandlerLoader")
                     else:
-                        if ":" not in handler_path:
-                            raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
-                        module_path, function_name = handler_path.rsplit(":", 1)
-                        if not module_path or not function_name:
-                            raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
-                        module = importlib.import_module(module_path)
-                        if not hasattr(module, function_name):
-                            raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
-                        handler = getattr(module, function_name)
-                        if not callable(handler):
-                            raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
-                        logger.debug(f"Loaded handler for {service_name}.{method_name}: {handler_path}")
+                        # Fallback to old method for backward compatibility
+                        if port_name:
+                            handler = get_port_registry().get_handler(port_name)
+                            logger.debug(f"Loaded port '{port_name}' for {service_name}.{method_name}")
+                        else:
+                            if ":" not in handler_path:
+                                raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
+                            module_path, function_name = handler_path.rsplit(":", 1)
+                            if not module_path or not function_name:
+                                raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
+                            import importlib
+                            module = importlib.import_module(module_path)
+                            if not hasattr(module, function_name):
+                                raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
+                            handler = getattr(module, function_name)
+                            if not callable(handler):
+                                raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
+                            logger.debug(f"Loaded handler for {service_name}.{method_name}: {handler_path}")
                     service_handler_map[method_name] = handler
                 except (HandlerError, PortError) as e:
                     logger.error(f"Failed to load handler/port for {service_name}.{method_name}: {e}")

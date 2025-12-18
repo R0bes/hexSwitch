@@ -1,8 +1,27 @@
+---
+layout: default
+title: HexSwitch - Vollständige Projektdokumentation
+---
+
+<div class="hexswitch-header">
+  <div class="hexswitch-header-content">
+    <div class="hexswitch-logo-container">
+      <img src="{{ '/assets/logo.png' | relative_url }}" alt="HexSwitch Logo" class="hexswitch-logo" />
+      <div class="hexswitch-title-group">
+        <h1 class="hexswitch-title">HexSwitch</h1>
+        <p class="hexswitch-tagline">Vollständige Projektdokumentation</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hexswitch-content">
+
 # HexSwitch - Vollständige Projektdokumentation
 
 **Version:** 0.1.0  
 **Letzte Aktualisierung:** 2025-12-13  
-**Status:** Alpha
+**Status:** <span class="badge badge-warning">Alpha</span>
 
 ---
 
@@ -573,5 +592,10 @@ def hello_handler(envelope: Envelope) -> Envelope:
 
 **Letzte Aktualisierung:** 2025-12-13  
 **Version:** 0.1.0  
-**Status:** Alpha
+**Status:** <span class="badge badge-warning">Alpha</span>
 
+</div>
+
+<div class="hexswitch-footer">
+  <p>© 2025 HexSwitch | MIT License</p>
+</div>
