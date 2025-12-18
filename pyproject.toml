@@ -140,6 +140,7 @@ addopts = [
     # Filter RuntimeWarning for unawaited coroutines from AsyncMock garbage collection
     # (Also handled in conftest.py for more reliable filtering)
     "-W", "ignore:coroutine.*was never awaited:RuntimeWarning",
+    "-W", "ignore::RuntimeWarning:_pytest.unraisableexception",
 ]
 markers = [
     "basic: Basic tests (run first)",

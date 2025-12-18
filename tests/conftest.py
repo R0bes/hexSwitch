@@ -119,13 +119,26 @@ def pytest_configure(config):
     # Filter RuntimeWarning for unawaited coroutines from AsyncMock garbage collection
     # This happens when AsyncMock objects are garbage collected and their coroutines
     # are not awaited. This is a known issue with AsyncMock and pytest.
+    # Filter all RuntimeWarnings from pytest's unraisableexception handler
     warnings.filterwarnings(
         "ignore",
-        message="coroutine.*was never awaited",
+        category=RuntimeWarning,
+        module=r".*unraisableexception.*",
+    )
+    # Filter by message pattern for coroutine warnings
+    warnings.filterwarnings(
+        "ignore",
+        message=r".*coroutine.*was never awaited.*",
         category=RuntimeWarning,
     )
+    # Filter AsyncMockMixin specific warnings
     warnings.filterwarnings(
         "ignore",
-        message=".*AsyncMockMixin._execute_mock_call.*was never awaited",
+        message=r".*AsyncMockMixin.*",
         category=RuntimeWarning,
+    )
+    # Also register a hook to filter warnings during test execution
+    config.addinivalue_line(
+        "filterwarnings",
+        "ignore::RuntimeWarning:_pytest.unraisableexception",
     )
