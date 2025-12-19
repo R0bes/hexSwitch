@@ -57,12 +57,13 @@ jobs:
 
       - name: Push to protected branch
         if: steps.commit.outputs.has_changes == 'true'
-        uses: CasperWA/push-protected@v2
-        with:
-          token: ${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
-          branch: main
-          unprotect_reviews: true
-          force: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git to use the token
+          git remote set-url origin https://x-access-token:${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          # Push to main using the PAT token (bypasses branch protection)
+          git push origin HEAD:main
 
       - name: Create git tag
         env:
