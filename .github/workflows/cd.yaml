@@ -43,25 +43,37 @@ jobs:
           echo "Bumped version to $NEW_VERSION"
 
       - name: Commit version bump
-        env:
-          GITHUB_TOKEN: ${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+        id: commit
         run: |
           git add pyproject.toml
           if git diff --staged --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "No changes to commit"
           else
-            git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
-            # Use PAT token that can bypass branch protection
-            git remote set-url origin https://x-access-token:${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-            git push origin main
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}" || exit 0
+            echo "Committed version bump"
           fi
 
+      - name: Push to protected branch
+        if: steps.commit.outputs.has_changes == 'true'
+        uses: CasperWA/push-protected@v2
+        with:
+          token: ${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+          branch: main
+          unprotect_reviews: true
+          force: false
+
       - name: Create git tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           if git rev-parse "v${{ steps.bump.outputs.version }}" >/dev/null 2>&1; then
             echo "Tag v${{ steps.bump.outputs.version }} already exists"
           else
             git tag -a "v${{ steps.bump.outputs.version }}" -m "Release v${{ steps.bump.outputs.version }}"
+            # Tags can usually be pushed even to protected branches
+            git remote set-url origin https://x-access-token:${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
             git push origin "v${{ steps.bump.outputs.version }}"
           fi
 
