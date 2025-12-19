@@ -1,5 +1,7 @@
 """Outbound port registry for managing outbound ports and their factories."""
 
+from __future__ import annotations
+
 import logging
 import threading
 from typing import Callable
