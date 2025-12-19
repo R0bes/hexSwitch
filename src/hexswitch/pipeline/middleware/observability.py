@@ -32,6 +32,7 @@ class ObservabilityMiddleware:
             Updated context
         """
         # Extract trace context from envelope
+        original_span_id = ctx.envelope.span_id
         parent_span_id = ctx.envelope.parent_span_id
 
         # Create span name
@@ -61,8 +62,8 @@ class ObservabilityMiddleware:
         # Update envelope with new span context
         ctx.envelope.trace_id = span.trace_id
         ctx.envelope.span_id = span.span_id
-        if span_id:
-            ctx.envelope.parent_span_id = span_id
+        if original_span_id:
+            ctx.envelope.parent_span_id = original_span_id
 
         # Record start metrics
         self._record_start_metrics(ctx)
@@ -91,10 +92,6 @@ class ObservabilityMiddleware:
         finally:
             # Finish span
             span.finish()
-            # Update envelope with finished span context
-            if ctx.envelope.parent_span_id == span_id:
-                # Restore original parent_span_id
-                pass
 
     def _record_start_metrics(self, ctx: PipelineContext) -> None:
         """Record start metrics.

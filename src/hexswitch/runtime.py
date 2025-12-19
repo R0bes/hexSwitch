@@ -22,6 +22,7 @@ from hexswitch.registry.adapters import ADAPTER_METADATA, AdapterRegistry
 from hexswitch.registry.factory import AdapterFactory
 from hexswitch.routing.routes import OutboundRouteRegistry
 from hexswitch.shared.config.config import build_execution_plan
+from hexswitch.shared.envelope import Envelope
 from hexswitch.shared.logging import get_logger
 from hexswitch.shared.observability import (
     get_global_metrics_collector,
