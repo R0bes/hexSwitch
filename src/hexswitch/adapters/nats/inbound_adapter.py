@@ -1,6 +1,7 @@
 """NATS inbound adapter implementation."""
 
 import asyncio
+import importlib
 import logging
 import threading
 from typing import Any
@@ -88,7 +89,6 @@ class NatsAdapterServer(InboundAdapter):
                                 f"Invalid handler path format: {handler_path}. "
                                 "Module path and function name must not be empty."
                             )
-                        import importlib
                         module = importlib.import_module(module_path)
                         if not hasattr(module, function_name):
                             raise HandlerError(
