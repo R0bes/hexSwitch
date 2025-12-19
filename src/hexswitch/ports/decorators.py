@@ -59,3 +59,46 @@ def port(
         return wrapper
 
     return decorator
+
+
+def outbound_port(name: str) -> Callable:
+    """Decorator for outbound ports.
+
+    Registers a factory function that creates envelopes for outbound communication.
+
+    Args:
+        name: Port name
+
+    Returns:
+        Decorator function
+
+    Example:
+        >>> from hexswitch.ports import outbound_port
+        >>> from hexswitch.shared.envelope import Envelope
+        >>>
+        >>> @outbound_port(name="external_api")
+        >>> def create_external_api_envelope(order_id: str, amount: float) -> Envelope:
+        >>>     return Envelope(
+        >>>         path="/api/orders",
+        >>>         method="POST",
+        >>>         body={"id": order_id, "amount": amount}
+        >>>     )
+    """
+    from hexswitch.ports.outbound_registry import get_outbound_registry
+
+    def decorator(func: Callable) -> Callable:
+        """Register function as outbound port factory."""
+
+        # Preserve original function metadata
+        @functools.wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            return func(*args, **kwargs)
+
+        # Register in OutboundPortRegistry
+        registry = get_outbound_registry()
+        registry.register_port(name, wrapper)
+        logger.debug(f"Decorated outbound port factory '{func.__name__}' registered on port '{name}'")
+
+        return wrapper
+
+    return decorator

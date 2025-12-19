@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 from types import ModuleType
 from typing import Callable
+import warnings
 
 import pytest
 
@@ -23,6 +24,13 @@ try:
 except ImportError:
     # pytest-timeout not installed, timeout markers will be ignored
     # Tests will rely on subprocess timeouts instead
+    pass
+
+# Import pytest-asyncio to enable async test support
+try:
+    import pytest_asyncio  # noqa: F401
+except ImportError:
+    # pytest-asyncio not installed, async tests will fail
     pass
 
 
@@ -104,3 +112,33 @@ def handler_module(mock_handler: Callable) -> ModuleType:
 
     if module_name in sys.modules:
         del sys.modules[module_name]
+
+
+def pytest_configure(config):
+    """Configure pytest to filter known warnings."""
+    # Filter RuntimeWarning for unawaited coroutines from AsyncMock garbage collection
+    # This happens when AsyncMock objects are garbage collected and their coroutines
+    # are not awaited. This is a known issue with AsyncMock and pytest.
+    # Filter all RuntimeWarnings from pytest's unraisableexception handler
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        module=r".*unraisableexception.*",
+    )
+    # Filter by message pattern for coroutine warnings
+    warnings.filterwarnings(
+        "ignore",
+        message=r".*coroutine.*was never awaited.*",
+        category=RuntimeWarning,
+    )
+    # Filter AsyncMockMixin specific warnings
+    warnings.filterwarnings(
+        "ignore",
+        message=r".*AsyncMockMixin.*",
+        category=RuntimeWarning,
+    )
+    # Also register a hook to filter warnings during test execution
+    config.addinivalue_line(
+        "filterwarnings",
+        "ignore::RuntimeWarning:_pytest.unraisableexception",
+    )

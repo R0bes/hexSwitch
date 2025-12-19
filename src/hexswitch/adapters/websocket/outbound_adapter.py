@@ -123,9 +123,16 @@ class WebSocketAdapterClient(OutboundAdapter):
                 future.result(timeout=self.timeout)
 
                 # Start receiving messages
-                self._receive_task = asyncio.run_coroutine_threadsafe(
+                future = asyncio.run_coroutine_threadsafe(
                     self._receive_messages(), self._loop
-                ).result(timeout=1)
+                )
+                # Store the future, not the result
+                self._receive_task = future
+                # Wait briefly to ensure task started
+                try:
+                    future.result(timeout=0.1)
+                except Exception:
+                    pass  # Task is running, which is expected
 
             self._connected = True
             logger.info(f"WebSocket client adapter '{self.name}' connected to {self.url}")
@@ -142,14 +149,25 @@ class WebSocketAdapterClient(OutboundAdapter):
 
         try:
             if self._receive_task:
-                self._receive_task.cancel()
+                # Cancel the task if it's a Future from run_coroutine_threadsafe
+                if hasattr(self._receive_task, 'cancel'):
+                    self._receive_task.cancel()
+                # If it's a Future, wait for cancellation to complete
+                if hasattr(self._receive_task, 'result'):
+                    try:
+                        self._receive_task.result(timeout=1.0)
+                    except Exception:
+                        pass  # Ignore errors during cancellation
 
             if self._loop and self.websocket:
-                asyncio.run_coroutine_threadsafe(self.websocket.close(), self._loop).result(
-                    timeout=2
-                )
+                future = asyncio.run_coroutine_threadsafe(self.websocket.close(), self._loop)
+                try:
+                    future.result(timeout=2)
+                except Exception as e:
+                    logger.error(f"Error closing WebSocket connection: {e}")
 
             self.websocket = None
+            self._receive_task = None
             self._connected = False
             logger.info(f"WebSocket client adapter '{self.name}' disconnected")
         except Exception as e:

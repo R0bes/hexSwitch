@@ -113,7 +113,7 @@ class HttpEnvelope:
                 trace_id=envelope.trace_id,
                 span_id=envelope.span_id,
                 parent_span_id=envelope.parent_span_id,
-                format="hexswitch",
+                header_format="hexswitch",
             )
 
         # Copy other headers from envelope
@@ -155,7 +155,7 @@ class HttpEnvelope:
                 trace_id=envelope.trace_id,
                 span_id=envelope.span_id,
                 parent_span_id=envelope.parent_span_id,
-                format="hexswitch",
+                header_format="hexswitch",
             )
 
         body = envelope.body

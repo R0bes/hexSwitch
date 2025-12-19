@@ -1,3 +1,22 @@
+---
+layout: default
+title: PyPI Upload Guide
+---
+
+<div class="hexswitch-header">
+  <div class="hexswitch-header-content">
+    <div class="hexswitch-logo-container">
+      <img src="{{ '/assets/logo.png' | relative_url }}" alt="HexSwitch Logo" class="hexswitch-logo" />
+      <div class="hexswitch-title-group">
+        <h1 class="hexswitch-title">HexSwitch</h1>
+        <p class="hexswitch-tagline">PyPI Upload Guide</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hexswitch-content">
+
 # PyPI Upload Guide
 
 Anleitung zum Hochladen von HexSwitch auf PyPI (Python Package Index).
@@ -253,3 +272,8 @@ PyPI erlaubt keine erneuten Uploads derselben Version!
 - [Twine Documentation](https://twine.readthedocs.io/)
 - [Python Packaging Guide](https://packaging.python.org/en/latest/guides/distributing-packages-using-setuptools/)
 
+</div>
+
+<div class="hexswitch-footer">
+  <p>© 2025 HexSwitch | MIT License</p>
+</div>

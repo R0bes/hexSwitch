@@ -1,7 +1,6 @@
 """MCP (Model Context Protocol) inbound adapter implementation."""
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import importlib
 import json
 import logging
 from threading import Thread
@@ -9,6 +8,7 @@ from typing import Any
 
 from hexswitch.adapters.base import InboundAdapter
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
+from hexswitch.handlers.loader import HandlerLoader
 from hexswitch.ports import PortError, get_port_registry
 from hexswitch.shared.envelope import Envelope
 
@@ -22,6 +22,7 @@ class McpRequestHandler(BaseHTTPRequestHandler):
         self,
         methods: list[dict[str, Any]],
         adapter: "McpAdapterServer",
+        handler_loader: HandlerLoader | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -30,11 +31,13 @@ class McpRequestHandler(BaseHTTPRequestHandler):
         Args:
             methods: List of method configurations.
             adapter: Reference to McpAdapterServer instance (for converter access).
+            handler_loader: Handler loader instance (optional).
             *args: Additional arguments for BaseHTTPRequestHandler.
             **kwargs: Additional keyword arguments for BaseHTTPRequestHandler.
         """
         self.methods = methods
         self._adapter = adapter
+        self._handler_loader = handler_loader
         super().__init__(*args, **kwargs)
 
     def log_message(self, format: str, *args: Any) -> None:
@@ -81,38 +84,61 @@ class McpRequestHandler(BaseHTTPRequestHandler):
             self._send_jsonrpc_error(-32601, "Method not found", request_id, f"Method '{method_name}' not found")
             return
 
-        # Load handler or port
+        # Load handler or port using HandlerLoader
         try:
-            if "port" in method_config:
-                handler = get_port_registry().get_handler(method_config["port"])
-            elif "handler" in method_config:
-                handler_path = method_config["handler"]
-                if ":" not in handler_path:
-                    raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
-                module_path, function_name = handler_path.rsplit(":", 1)
-                if not module_path or not function_name:
-                    raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
-                module = importlib.import_module(module_path)
-                if not hasattr(module, function_name):
-                    raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
-                handler = getattr(module, function_name)
-                if not callable(handler):
-                    raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
+            # Use handler loader if available, otherwise fall back to old method
+            if self._handler_loader:
+                if "port" in method_config:
+                    handler = self._handler_loader.resolve(method_config["port"])
+                elif "handler" in method_config:
+                    handler = self._handler_loader.resolve(method_config["handler"])
+                else:
+                    logger.error(f"Method '{method_name}' must have either 'handler' or 'port' specified")
+                    self._send_jsonrpc_error(-32603, "Internal error", request_id, "Method configuration error")
+                    return
             else:
-                logger.error(f"Method '{method_name}' must have either 'handler' or 'port' specified")
-                self._send_jsonrpc_error(-32603, "Internal error", request_id, "Method configuration error")
-                return
+                # Fallback to old method for backward compatibility
+                if "port" in method_config:
+                    handler = get_port_registry().get_handler(method_config["port"])
+                elif "handler" in method_config:
+                    handler_path = method_config["handler"]
+                    if ":" not in handler_path:
+                        raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
+                    module_path, function_name = handler_path.rsplit(":", 1)
+                    if not module_path or not function_name:
+                        raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
+                    import importlib
+                    module = importlib.import_module(module_path)
+                    if not hasattr(module, function_name):
+                        raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
+                    handler = getattr(module, function_name)
+                    if not callable(handler):
+                        raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
+                else:
+                    logger.error(f"Method '{method_name}' must have either 'handler' or 'port' specified")
+                    self._send_jsonrpc_error(-32603, "Internal error", request_id, "Method configuration error")
+                    return
         except (HandlerError, PortError) as e:
             logger.error(f"Failed to load handler/port for method '{method_name}': {e}")
             self._send_jsonrpc_error(-32603, "Internal error", request_id, str(e))
             return
 
         # Convert MCP JSON-RPC Request → Envelope using converter
+        # Convert headers to dict, handling both HTTPMessage objects and mocks
+        if isinstance(self.headers, dict):
+            headers = self.headers
+        else:
+            try:
+                headers = dict(self.headers)
+            except (TypeError, AttributeError):
+                # Fallback for mock objects or other non-dict types
+                headers = {}
+
         request_envelope = self._adapter.to_envelope(
             method=method_name,
             params=params,
             request_id=request_id,
-            headers=dict(self.headers),
+            headers=headers,
         )
 
         # Call handler/port with Envelope
@@ -185,6 +211,7 @@ class McpAdapterServer(InboundAdapter):
         self.server_thread: Thread | None = None
         self.port = config.get("port", 3000)
         self.methods = config.get("methods", [])
+        self._handler_loader: HandlerLoader | None = None
 
     def start(self) -> None:
         """Start the MCP server.
@@ -199,7 +226,7 @@ class McpAdapterServer(InboundAdapter):
         try:
             # Create request handler factory
             def handler_factory(*args: Any, **kwargs: Any) -> McpRequestHandler:
-                return McpRequestHandler(self.methods, self, *args, **kwargs)
+                return McpRequestHandler(self.methods, self, self._handler_loader, *args, **kwargs)
 
             # Create and start server
             self.server = HTTPServer(("", self.port), handler_factory)

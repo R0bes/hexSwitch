@@ -1,7 +1,6 @@
 """HTTP inbound adapter implementation."""
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-import importlib
 import json
 import logging
 from threading import Thread
@@ -11,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 from hexswitch.adapters.base import InboundAdapter
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
 from hexswitch.adapters.http._Http_Envelope import HttpEnvelope
+from hexswitch.handlers.loader import HandlerLoader
 from hexswitch.ports import PortError, get_port_registry
 from hexswitch.shared.envelope import Envelope
 from hexswitch.shared.helpers import parse_path_params
@@ -26,6 +26,7 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
         routes: list[dict[str, Any]],
         base_path: str,
         adapter: "HttpAdapterServer",
+        handler_loader: HandlerLoader | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -41,11 +42,101 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
         self.routes = routes
         self.base_path = base_path.rstrip("/")
         self._adapter = adapter
+        self._handler_loader = handler_loader
         super().__init__(*args, **kwargs)
 
     def log_message(self, format: str, *args: Any) -> None:
         """Override to use our logger instead of stderr."""
         logger.debug(f"{self.address_string()} - {format % args}")
+
+    def _handle_default_route(self, path: str, method: str) -> bool:
+        """Handle default health and metrics routes.
+
+        Args:
+            path: Request path.
+            method: HTTP method.
+
+        Returns:
+            True if route was handled, False otherwise.
+        """
+        if method.upper() != "GET":
+            return False
+
+        try:
+            from hexswitch.handlers.health import (
+                health_handler,
+                liveness_handler,
+                readiness_handler,
+            )
+            from hexswitch.handlers.metrics import metrics_handler
+            from hexswitch.ports import PortError
+            from hexswitch.shared.envelope import Envelope
+
+            port_registry = get_port_registry()
+
+            # Create a minimal envelope for the handler
+            envelope = Envelope(path=path, body={})
+
+            # Check health endpoints
+            if path == "/health":
+                try:
+                    handler = port_registry.get_handler("__health__")
+                except PortError:
+                    handler = health_handler
+                response = handler(envelope)
+                self._send_response(response.status_code, response.data)
+                return True
+
+            if path == "/health/live":
+                try:
+                    handler = port_registry.get_handler("__live__")
+                except PortError:
+                    handler = liveness_handler
+                response = handler(envelope)
+                self._send_response(response.status_code, response.data)
+                return True
+
+            if path == "/health/ready":
+                try:
+                    handler = port_registry.get_handler("__ready__")
+                except PortError:
+                    handler = readiness_handler
+                response = handler(envelope)
+                self._send_response(response.status_code, response.data)
+                return True
+
+            # Metrics endpoint needs special handling
+            if path == "/metrics":
+                try:
+                    handler = port_registry.get_handler("__metrics__")
+                except PortError:
+                    handler = metrics_handler
+                response = handler(envelope)
+                # Metrics returns Prometheus format in data["metrics"]
+                metrics_text = response.data.get("metrics", "")
+                # Send as plain text response
+                response_body = metrics_text.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; version=0.0.4")
+                self.send_header("Content-Length", str(len(response_body)))
+                self.end_headers()
+                self.wfile.write(response_body)
+                return True
+
+        except (ConnectionAbortedError, BrokenPipeError, OSError) as e:
+            # Connection was closed by client - this is normal and not an error
+            logger.debug(f"Connection closed by client during default route handling: {e}")
+            return True
+        except Exception as e:
+            logger.exception(f"Error handling default route: {e}")
+            try:
+                self._send_response(500, {"error": "Internal Server Error", "message": str(e)})
+            except (ConnectionAbortedError, BrokenPipeError, OSError):
+                # Connection closed while sending error response - ignore
+                pass
+            return True
+
+        return False
 
     def do_GET(self) -> None:
         """Handle GET requests."""
@@ -81,6 +172,11 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
         if self.base_path and request_path.startswith(self.base_path):
             request_path = request_path[len(self.base_path) :]
 
+        # Check default routes first if enabled
+        if self._adapter.enable_default_routes:
+            if self._handle_default_route(request_path, method):
+                return
+
         # Find matching route (support path parameters like /orders/:id)
         route = None
         import re
@@ -114,28 +210,51 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
             self._send_response(404, {"error": "Not Found"})
             return
 
-        # Load handler or port
+        # Determine port name for pipeline routing
+        port_name = None
+        handler = None
+
+        # Load handler or port using HandlerLoader (for fallback if pipeline not available)
         try:
-            # Support both "handler:" and "port:" in config
-            if "port" in route:
-                handler = get_port_registry().get_handler(route["port"])
-            elif "handler" in route:
-                handler_path = route["handler"]
-                if ":" not in handler_path:
-                    raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
-                module_path, function_name = handler_path.rsplit(":", 1)
-                if not module_path or not function_name:
-                    raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
-                module = importlib.import_module(module_path)
-                if not hasattr(module, function_name):
-                    raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
-                handler = getattr(module, function_name)
-                if not callable(handler):
-                    raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
+            # Use handler loader if available, otherwise fall back to old method
+            if self._handler_loader:
+                # Support both "handler:" and "port:" in config
+                if "port" in route:
+                    port_name = route["port"]
+                    handler = self._handler_loader.resolve(port_name)
+                elif "handler" in route:
+                    handler_path = route["handler"]
+                    handler = self._handler_loader.resolve(handler_path)
+                    # For handler paths, use handler path as port_name
+                    port_name = handler_path
+                else:
+                    logger.error("Route must have either 'handler' or 'port' specified")
+                    self._send_response(500, {"error": "Internal Server Error", "message": "Route configuration error"})
+                    return
             else:
-                logger.error("Route must have either 'handler' or 'port' specified")
-                self._send_response(500, {"error": "Internal Server Error", "message": "Route configuration error"})
-                return
+                # Fallback to old method for backward compatibility
+                if "port" in route:
+                    port_name = route["port"]
+                    handler = get_port_registry().get_handler(port_name)
+                elif "handler" in route:
+                    handler_path = route["handler"]
+                    if ":" not in handler_path:
+                        raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
+                    module_path, function_name = handler_path.rsplit(":", 1)
+                    if not module_path or not function_name:
+                        raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
+                    import importlib
+                    module = importlib.import_module(module_path)
+                    if not hasattr(module, function_name):
+                        raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
+                    handler = getattr(module, function_name)
+                    if not callable(handler):
+                        raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
+                    port_name = handler_path
+                else:
+                    logger.error("Route must have either 'handler' or 'port' specified")
+                    self._send_response(500, {"error": "Internal Server Error", "message": "Route configuration error"})
+                    return
         except (HandlerError, PortError) as e:
             logger.error(f"Failed to load handler/port: {e}")
             self._send_response(500, {"error": "Internal Server Error", "message": str(e)})
@@ -166,12 +285,50 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
             path_params=path_params,
         )
 
-        # Call handler/port with Envelope
-        try:
-            response_envelope = handler(request_envelope)
-        except Exception as e:
-            logger.exception(f"Handler/Port raised exception: {e}")
-            response_envelope = Envelope.error(500, "Internal Server Error")
+        # Set port_name in envelope metadata for pipeline routing
+        if port_name:
+            request_envelope.metadata["port_name"] = port_name
+
+        # Try to use pipeline if runtime is available
+        if hasattr(self._adapter, "_runtime") and self._adapter._runtime and port_name:
+            try:
+                import asyncio
+
+                # Check if we're in an async context
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        # We're in an async context, but HTTP handler is sync
+                        # Create a task or use run_coroutine_threadsafe
+                        import concurrent.futures
+                        future = concurrent.futures.Future()
+                        asyncio.run_coroutine_threadsafe(
+                            self._adapter._runtime.dispatch(request_envelope), loop
+                        ).add_done_callback(lambda f: future.set_result(f.result()))
+                        response_envelope = future.result(timeout=30)
+                    else:
+                        # No running loop, run async function
+                        response_envelope = loop.run_until_complete(
+                            self._adapter._runtime.dispatch(request_envelope)
+                        )
+                except RuntimeError:
+                    # No event loop, create one
+                    response_envelope = asyncio.run(self._adapter._runtime.dispatch(request_envelope))
+            except Exception as e:
+                logger.warning(f"Failed to use pipeline, falling back to direct handler call: {e}")
+                # Fallback to direct handler call
+                try:
+                    response_envelope = handler(request_envelope)
+                except Exception as handler_error:
+                    logger.exception(f"Handler/Port raised exception: {handler_error}")
+                    response_envelope = Envelope.error(500, "Internal Server Error")
+        else:
+            # No runtime available, use direct handler call
+            try:
+                response_envelope = handler(request_envelope)
+            except Exception as e:
+                logger.exception(f"Handler/Port raised exception: {e}")
+                response_envelope = Envelope.error(500, "Internal Server Error")
 
         # Convert Envelope (Response) → HTTP Response using converter
         self._send_envelope_response(response_envelope)
@@ -205,12 +362,17 @@ class HttpRequestHandler(BaseHTTPRequestHandler):
             status_code: HTTP status code.
             data: Response data dictionary.
         """
-        response_body = json.dumps(data).encode("utf-8")
-        self.send_response(status_code)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(response_body)))
-        self.end_headers()
-        self.wfile.write(response_body)
+        try:
+            response_body = json.dumps(data).encode("utf-8")
+            self.send_response(status_code)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(response_body)))
+            self.end_headers()
+            self.wfile.write(response_body)
+        except (ConnectionAbortedError, BrokenPipeError, OSError):
+            # Connection was closed by client - this is normal and not an error
+            logger.debug("Connection closed by client while sending response")
+            raise  # Re-raise to let caller handle it
 
 
 class HttpAdapterServer(InboundAdapter):
@@ -232,6 +394,8 @@ class HttpAdapterServer(InboundAdapter):
         self.port = config.get("port", 8000)
         self.base_path = config.get("base_path", "")
         self.routes = config.get("routes", [])
+        self.enable_default_routes = config.get("enable_default_routes", True)
+        self._handler_loader: HandlerLoader | None = None
 
     def start(self) -> None:
         """Start the HTTP server.
@@ -246,13 +410,40 @@ class HttpAdapterServer(InboundAdapter):
         try:
             # Create request handler factory
             def handler_factory(*args: Any, **kwargs: Any) -> HttpRequestHandler:
-                return HttpRequestHandler(self.routes, self.base_path, self, *args, **kwargs)
+                return HttpRequestHandler(self.routes, self.base_path, self, self._handler_loader, *args, **kwargs)
 
             # Create and start server
             self.server = HTTPServer(("", self.port), handler_factory)
             self.server_thread = Thread(target=self.server.serve_forever, daemon=True)
             self.server_thread.start()
-            self._running = True
+
+            # Give server time to start and verify it's listening
+            import socket
+            import time
+            max_attempts = 200  # Increase attempts for slower systems
+            self._running = True  # Mark as running, then verify
+            server_ready = False
+            for i in range(max_attempts):
+                try:
+                    # Check if server socket is bound and listening
+                    if self.server.socket and self.server.socket.fileno() != -1:
+                        # Try to connect to verify server is accepting connections
+                        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                            s.settimeout(0.2)
+                            result = s.connect_ex(("localhost", self.port))
+                            if result == 0:
+                                server_ready = True
+                                logger.debug(f"HTTP adapter '{self.name}' verified listening on port {self.port} after {i*0.1}s")
+                                break
+                except Exception:
+                    pass
+                time.sleep(0.1)
+
+            if not server_ready:
+                logger.warning(f"HTTP adapter '{self.name}' may not be fully ready on port {self.port} after {max_attempts*0.1}s")
+            else:
+                # Give server a bit more time to be fully ready for HTTP requests
+                time.sleep(0.2)
 
             logger.info(
                 f"HTTP adapter '{self.name}' started on port {self.port} "

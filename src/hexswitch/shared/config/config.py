@@ -79,6 +79,78 @@ def validate_config(config: dict[str, Any]) -> None:
         raise ConfigError(f"Configuration validation failed: {e}") from e
 
 
+def build_execution_plan(config: dict[str, Any]) -> dict[str, Any]:
+    """Build execution plan from configuration.
+
+    Args:
+        config: Configuration dictionary (may contain Pydantic models after validation).
+
+    Returns:
+        Execution plan dictionary with service name and adapter lists.
+    """
+    plan: dict[str, Any] = {
+        "service": config.get("service", {}).get("name", "unknown"),
+        "inbound_adapters": [],
+        "outbound_adapters": [],
+    }
+
+    # Extract inbound adapters
+    inbound_config = config.get("inbound")
+    if inbound_config is not None:
+        # Handle both dict and Pydantic model
+        if hasattr(inbound_config, "model_dump"):
+            # Pydantic model - convert to dict
+            inbound_dict = inbound_config.model_dump(exclude_none=True)
+        elif isinstance(inbound_config, dict):
+            inbound_dict = inbound_config
+        else:
+            inbound_dict = {}
+
+        for adapter_name, adapter_config in inbound_dict.items():
+            # Handle both dict and Pydantic model
+            if hasattr(adapter_config, "model_dump"):
+                adapter_dict = adapter_config.model_dump(exclude_none=True)
+            elif isinstance(adapter_config, dict):
+                adapter_dict = adapter_config
+            else:
+                continue
+
+            if adapter_dict.get("enabled", False):
+                plan["inbound_adapters"].append({
+                    "name": adapter_name,
+                    "config": adapter_dict,
+                })
+
+    # Extract outbound adapters
+    outbound_config = config.get("outbound")
+    if outbound_config is not None:
+        # Handle both dict and Pydantic model
+        if hasattr(outbound_config, "model_dump"):
+            # Pydantic model - convert to dict
+            outbound_dict = outbound_config.model_dump(exclude_none=True)
+        elif isinstance(outbound_config, dict):
+            outbound_dict = outbound_config
+        else:
+            outbound_dict = {}
+
+        for adapter_name, adapter_config in outbound_dict.items():
+            # Handle both dict and Pydantic model
+            if hasattr(adapter_config, "model_dump"):
+                adapter_dict = adapter_config.model_dump(exclude_none=True)
+            elif isinstance(adapter_config, dict):
+                adapter_dict = adapter_config
+            else:
+                continue
+
+            if adapter_dict.get("enabled", False):
+                plan["outbound_adapters"].append({
+                    "name": adapter_name,
+                    "config": adapter_dict,
+                })
+
+    return plan
+
+
 def _validate_adapters(adapters: dict[str, Any], section_name: str) -> None:
     """Validate adapter configuration.
 
@@ -678,6 +750,23 @@ def _validate_mcp_adapter(
     Raises:
         ConfigError: If validation fails.
     """
+    # Validate server_url (required)
+    if "server_url" not in adapter_config:
+        raise ConfigError(
+            f"Adapter '{adapter_name}' in section '{section_name}': "
+            "'server_url' is required"
+        )
+    if not isinstance(adapter_config["server_url"], str):
+        raise ConfigError(
+            f"Adapter '{adapter_name}' in section '{section_name}': "
+            "'server_url' must be a string"
+        )
+    if not adapter_config["server_url"]:
+        raise ConfigError(
+            f"Adapter '{adapter_name}' in section '{section_name}': "
+            "'server_url' must not be empty"
+        )
+
     # Validate port (optional, must be integer if present)
     if "port" in adapter_config:
         if not isinstance(adapter_config["port"], int):
@@ -749,6 +838,162 @@ def _validate_mcp_adapter(
                         f"Adapter '{adapter_name}' in section '{section_name}': "
                         f"Method at index {i}: 'port' must not be empty"
                     )
+
+
+def _validate_nats_adapter(
+    adapter_name: str, adapter_config: dict[str, Any], section_name: str
+) -> None:
+    """Validate NATS inbound adapter configuration.
+
+    Args:
+        adapter_name: Name of the adapter.
+        adapter_config: Adapter configuration dictionary.
+        section_name: Name of the section (for error messages).
+
+    Raises:
+        ConfigError: If validation fails.
+    """
+    # Validate servers (required)
+    if "servers" not in adapter_config:
+        raise ConfigError(
+            f"Adapter '{adapter_name}' in section '{section_name}': "
+            "'servers' is required"
+        )
+    # Validate servers (must be string or list if present)
+    if "servers" in adapter_config:
+        servers = adapter_config["servers"]
+        if isinstance(servers, str):
+            pass  # Valid
+        elif isinstance(servers, list):
+            for i, server in enumerate(servers):
+                if not isinstance(server, str):
+                    raise ConfigError(
+                        f"Adapter '{adapter_name}' in section '{section_name}': "
+                        f"Server at index {i} must be a string"
+                    )
+        else:
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'servers' must be a string or list of strings"
+            )
+
+    # Validate subjects (optional, must be list if present)
+    if "subjects" in adapter_config:
+        subjects = adapter_config["subjects"]
+        if not isinstance(subjects, list):
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'subjects' must be a list"
+            )
+
+        for i, subject_config in enumerate(subjects):
+            if not isinstance(subject_config, dict):
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Subject at index {i} must be a dictionary"
+                )
+
+            if "subject" not in subject_config:
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Subject at index {i} must contain 'subject'"
+                )
+            if not isinstance(subject_config["subject"], str):
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Subject at index {i}: 'subject' must be a string"
+                )
+
+            # Subject must have either "handler" or "port"
+            has_handler = "handler" in subject_config
+            has_port = "port" in subject_config
+
+            if not has_handler and not has_port:
+                raise ConfigError(
+                    f"Adapter '{adapter_name}' in section '{section_name}': "
+                    f"Subject at index {i} must contain either 'handler' or 'port'"
+                )
+
+            if has_handler:
+                if not isinstance(subject_config["handler"], str):
+                    raise ConfigError(
+                        f"Adapter '{adapter_name}' in section '{section_name}': "
+                        f"Subject at index {i}: 'handler' must be a string"
+                    )
+                _validate_handler_reference(
+                    subject_config["handler"], adapter_name, section_name, i
+                )
+
+            if has_port:
+                if not isinstance(subject_config["port"], str):
+                    raise ConfigError(
+                        f"Adapter '{adapter_name}' in section '{section_name}': "
+                        f"Subject at index {i}: 'port' must be a string"
+                    )
+                if not subject_config["port"]:
+                    raise ConfigError(
+                        f"Adapter '{adapter_name}' in section '{section_name}': "
+                        f"Subject at index {i}: 'port' must not be empty"
+                    )
+
+    # Validate queue_group (optional, must be string if present)
+    if "queue_group" in adapter_config:
+        if not isinstance(adapter_config["queue_group"], str):
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'queue_group' must be a string"
+            )
+
+
+def _validate_nats_client_adapter(
+    adapter_name: str, adapter_config: dict[str, Any], section_name: str
+) -> None:
+    """Validate NATS client adapter configuration.
+
+    Args:
+        adapter_name: Name of the adapter.
+        adapter_config: Adapter configuration dictionary.
+        section_name: Name of the section (for error messages).
+
+    Raises:
+        ConfigError: If validation fails.
+    """
+    # Validate servers (required)
+    if "servers" not in adapter_config:
+        raise ConfigError(
+            f"Adapter '{adapter_name}' in section '{section_name}': "
+            "'servers' is required"
+        )
+    # Validate servers (must be string or list if present)
+    if "servers" in adapter_config:
+        servers = adapter_config["servers"]
+        if isinstance(servers, str):
+            pass  # Valid
+        elif isinstance(servers, list):
+            for i, server in enumerate(servers):
+                if not isinstance(server, str):
+                    raise ConfigError(
+                        f"Adapter '{adapter_name}' in section '{section_name}': "
+                        f"Server at index {i} must be a string"
+                    )
+        else:
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'servers' must be a string or list of strings"
+            )
+
+    # Validate timeout (optional, must be number if present)
+    if "timeout" in adapter_config:
+        if not isinstance(adapter_config["timeout"], (int, float)):
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'timeout' must be a number"
+            )
+        if adapter_config["timeout"] <= 0:
+            raise ConfigError(
+                f"Adapter '{adapter_name}' in section '{section_name}': "
+                "'timeout' must be positive"
+            )
 
 
 def _validate_handler_reference(

@@ -106,7 +106,12 @@ class Envelope:
     # Observability methods
 
     def start_span(self, name: str | None = None, tags: dict[str, str] | None = None) -> Span:
-        """Start a new span for this envelope.
+        """DEPRECATED: Use Runtime.dispatch() instead.
+
+        This method is deprecated and will be removed in a future version.
+        Spans are now created automatically by the pipeline middleware.
+
+        Start a new span for this envelope.
 
         If trace_id is already set, creates a child span. Otherwise, creates a new trace.
         The span is automatically associated with this envelope.
@@ -118,6 +123,14 @@ class Envelope:
         Returns:
             Started span instance
         """
+        import warnings
+
+        warnings.warn(
+            "Envelope.start_span() is deprecated. "
+            "Use Runtime.dispatch() instead. Spans are created automatically by the pipeline middleware.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         span_name = name or self.path or "envelope"
 
         # Get parent span if trace context exists
@@ -156,10 +169,23 @@ class Envelope:
         return span
 
     def finish_span(self) -> None:
-        """Finish the associated span for this envelope.
+        """DEPRECATED: Use Runtime.dispatch() instead.
+
+        This method is deprecated and will be removed in a future version.
+        Spans are now finished automatically by the pipeline middleware.
+
+        Finish the associated span for this envelope.
 
         Adds envelope-specific tags and logs before finishing.
         """
+        import warnings
+
+        warnings.warn(
+            "Envelope.finish_span() is deprecated. "
+            "Use Runtime.dispatch() instead. Spans are finished automatically by the pipeline middleware.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if not self._span:
             return
 
@@ -188,11 +214,24 @@ class Envelope:
         self._span.finish()
 
     def get_span(self) -> Span | None:
-        """Get the associated span for this envelope.
+        """DEPRECATED: Use Runtime.dispatch() instead.
+
+        This method is deprecated and will be removed in a future version.
+        Spans are now managed by the pipeline middleware.
+
+        Get the associated span for this envelope.
 
         Returns:
             Span instance or None if no span is associated
         """
+        import warnings
+
+        warnings.warn(
+            "Envelope.get_span() is deprecated. "
+            "Use Runtime.dispatch() instead. Spans are managed by the pipeline middleware.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self._span
 
     def has_trace_context(self) -> bool:

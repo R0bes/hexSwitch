@@ -1,8 +1,27 @@
+---
+layout: default
+title: HexSwitch - Project Sanitize Report
+---
+
+<div class="hexswitch-header">
+  <div class="hexswitch-header-content">
+    <div class="hexswitch-logo-container">
+      <img src="{{ '/assets/logo.png' | relative_url }}" alt="HexSwitch Logo" class="hexswitch-logo" />
+      <div class="hexswitch-title-group">
+        <h1 class="hexswitch-title">HexSwitch</h1>
+        <p class="hexswitch-tagline">Project Sanitize Report</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hexswitch-content">
+
 # HexSwitch - Project Sanitize Report
 
 **Datum:** 2025-12-17  
 **Workflow:** project_sanitize  
-**Status:** ✅ Abgeschlossen
+**Status:** <span class="badge badge-success">✅ Abgeschlossen</span>
 
 ---
 
@@ -167,3 +186,8 @@ Das Projekt ist **gut strukturiert** und **sauber organisiert**:
 **Erstellt von:** Project Sanitize Workflow  
 **Datum:** 2025-12-17
 
+</div>
+
+<div class="hexswitch-footer">
+  <p>© 2025 HexSwitch | MIT License</p>
+</div>

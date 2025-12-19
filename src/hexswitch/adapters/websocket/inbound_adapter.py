@@ -1,7 +1,6 @@
 """WebSocket inbound adapter implementation."""
 
 import asyncio
-import importlib
 import json
 import logging
 import socket
@@ -14,6 +13,7 @@ from websockets.server import WebSocketServerProtocol, serve
 from hexswitch.adapters.base import InboundAdapter
 from hexswitch.adapters.exceptions import AdapterStartError, AdapterStopError, HandlerError
 from hexswitch.adapters.websocket._WebSocket_Envelope import WebSocketEnvelope
+from hexswitch.handlers.loader import HandlerLoader
 from hexswitch.ports import PortError, get_port_registry
 from hexswitch.shared.envelope import Envelope
 
@@ -42,6 +42,7 @@ class WebSocketAdapterServer(InboundAdapter):
         self._handler_map: dict[str, Any] = {}
         self._connections: set[WebSocketServerProtocol] = set()
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._handler_loader: HandlerLoader | None = None
 
     def _load_handlers(self) -> None:
         """Load all handler functions for configured routes."""
@@ -55,23 +56,35 @@ class WebSocketAdapterServer(InboundAdapter):
                 continue
 
             try:
-                # Support both "handler:" and "port:" in config
-                if port_name:
-                    handler = get_port_registry().get_handler(port_name)
-                    logger.debug(f"Loaded port '{port_name}' for route '{route_path}'")
+                # Use handler loader if available, otherwise fall back to old method
+                if self._handler_loader:
+                    # Support both "handler:" and "port:" in config
+                    if port_name:
+                        handler = self._handler_loader.resolve(port_name)
+                    elif handler_path:
+                        handler = self._handler_loader.resolve(handler_path)
+                    else:
+                        continue
+                    logger.debug(f"Loaded handler for route '{route_path}' via HandlerLoader")
                 else:
-                    if ":" not in handler_path:
-                        raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
-                    module_path, function_name = handler_path.rsplit(":", 1)
-                    if not module_path or not function_name:
-                        raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
-                    module = importlib.import_module(module_path)
-                    if not hasattr(module, function_name):
-                        raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
-                    handler = getattr(module, function_name)
-                    if not callable(handler):
-                        raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
-                    logger.debug(f"Loaded handler for route '{route_path}': {handler_path}")
+                    # Fallback to old method for backward compatibility
+                    if port_name:
+                        handler = get_port_registry().get_handler(port_name)
+                        logger.debug(f"Loaded port '{port_name}' for route '{route_path}'")
+                    else:
+                        if ":" not in handler_path:
+                            raise HandlerError(f"Invalid handler path format: {handler_path}. Expected format: 'module.path:function_name'")
+                        module_path, function_name = handler_path.rsplit(":", 1)
+                        if not module_path or not function_name:
+                            raise HandlerError(f"Invalid handler path format: {handler_path}. Module path and function name must not be empty.")
+                        import importlib
+                        module = importlib.import_module(module_path)
+                        if not hasattr(module, function_name):
+                            raise HandlerError(f"Module '{module_path}' does not have attribute '{function_name}'")
+                        handler = getattr(module, function_name)
+                        if not callable(handler):
+                            raise HandlerError(f"'{function_name}' in module '{module_path}' is not callable")
+                        logger.debug(f"Loaded handler for route '{route_path}': {handler_path}")
                 self._handler_map[route_path] = handler
             except (HandlerError, PortError) as e:
                 logger.error(f"Failed to load handler/port for route '{route_path}': {e}")
@@ -230,7 +243,8 @@ class WebSocketAdapterServer(InboundAdapter):
                 f"WebSocket adapter '{self.name}' started on port {self.port}, path: {self.path}"
             )
         except OSError as e:
-            if "Address already in use" in str(e):
+            error_str = str(e)
+            if "Address already in use" in error_str or "already in use" in error_str or "Only one usage" in error_str:
                 raise AdapterStartError(
                     f"Port {self.port} is already in use for WebSocket adapter '{self.name}'"
                 ) from e

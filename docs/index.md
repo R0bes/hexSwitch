@@ -3,13 +3,19 @@ layout: default
 title: HexSwitch Documentation
 ---
 
-<div align="center">
-  <img src="../assets/logo.png" alt="HexSwitch Logo" width="200" />
+<div class="hexswitch-header">
+  <div class="hexswitch-header-content">
+    <div class="hexswitch-logo-container">
+      <img src="{{ '/assets/logo.png' | relative_url }}" alt="HexSwitch Logo" class="hexswitch-logo" />
+      <div class="hexswitch-title-group">
+        <h1 class="hexswitch-title">HexSwitch</h1>
+        <p class="hexswitch-tagline">Hexagonal runtime switchboard for config-driven microservices</p>
+      </div>
+    </div>
+  </div>
 </div>
 
-# HexSwitch
-
-**Hexagonal runtime switchboard for config-driven microservices.**
+<div class="hexswitch-content">
 
 HexSwitch is a runtime system designed to orchestrate microservices using a hexagonal architecture pattern. It provides a configuration-driven approach to wiring together inbound and outbound adapters, enabling flexible and maintainable service communication.
 
@@ -28,22 +34,20 @@ from hexswitch.runtime import Runtime
 
 config = {
     "service": {"name": "my-service"},
-    "adapters": {
-        "inbound": [
-            {
-                "name": "http",
-                "enabled": True,
-                "port": 8000,
-                "routes": [
-                    {
-                        "path": "/hello",
-                        "method": "GET",
-                        "handler": "my_module:handler"
-                    }
-                ]
-            }
-        ]
-    }
+    "inbound": [
+        {
+            "name": "http",
+            "enabled": True,
+            "port": 8000,
+            "routes": [
+                {
+                    "path": "/hello",
+                    "method": "GET",
+                    "port": "hello_handler"
+                }
+            ]
+        }
+    ]
 }
 
 runtime = Runtime(config)
@@ -70,9 +74,15 @@ runtime.start()
 
 - **GitHub Repository**: [https://github.com/R0bes/hexSwitch](https://github.com/R0bes/hexSwitch)
 - **PyPI Package**: [https://pypi.org/project/hexswitch/](https://pypi.org/project/hexswitch/)
+- **Website**: [https://r0bes.github.io/hexSwitch/](https://r0bes.github.io/hexSwitch/)
 - **Issues**: [https://github.com/R0bes/hexSwitch/issues](https://github.com/R0bes/hexSwitch/issues)
 
 ## License
 
 MIT License - see [LICENSE](../LICENSE) file for details.
 
+</div>
+
+<div class="hexswitch-footer">
+  <p>© 2025 HexSwitch | MIT License</p>
+</div>
