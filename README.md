@@ -4,6 +4,8 @@
 
 # HexSwitch
 
+<!-- Test PR for CD workflow with branch protection -->
+
 Hexagonal runtime switchboard for config-driven microservices.
 
 ## Description
