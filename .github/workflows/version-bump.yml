@@ -6,6 +6,7 @@ on:
     paths:
       - 'pyproject.toml'
       - '.github/workflows/version-bump.yml'
+  workflow_dispatch:
 
 jobs:
   bump-version:
