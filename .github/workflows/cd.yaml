@@ -4,13 +4,17 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   create-tag:
     name: Create Git Tag
     runs-on: ubuntu-latest
+    # Only create tags on main branch (not on PRs)
     if: |
-      github.ref == 'refs/heads/main' ||
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
       github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
@@ -67,6 +71,9 @@ jobs:
   publish-pypi:
     name: Publish to PyPI
     runs-on: ubuntu-latest
+    # Only publish to PyPI on main branch (not on PRs)
+    if: |
+      github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: read
     steps:
@@ -103,7 +110,9 @@ jobs:
   publish-docker:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    # Run after create-tag only if it runs (on main), otherwise run independently (on PRs)
     needs: [create-tag]
+    if: always() && (needs.create-tag.result == 'success' || needs.create-tag.result == 'skipped')
     permissions:
       contents: read
       packages: write
@@ -153,6 +162,9 @@ jobs:
   publish-pages:
     name: Build and Deploy GitHub Pages
     runs-on: ubuntu-latest
+    # Only deploy pages on main branch (not on PRs)
+    if: |
+      github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: read
       pages: write
