@@ -5,8 +5,8 @@ runtime initialization, configuration loading, and lifecycle management.
 """
 
 import os
-import signal
 from pathlib import Path
+import signal
 from typing import Any
 
 from hexswitch.runtime import Runtime

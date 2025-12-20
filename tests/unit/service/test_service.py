@@ -1,8 +1,8 @@
 """Unit tests for HexSwitchService."""
 
 import os
-import tempfile
 from pathlib import Path
+import tempfile
 from typing import Any
 
 import pytest

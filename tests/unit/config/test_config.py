@@ -2,10 +2,10 @@
 
 from pathlib import Path
 import tempfile
+import tomllib
 
 import pytest
 import tomli_w
-import tomllib
 
 from hexswitch.shared.config import (
     DEFAULT_CONFIG_PATH,

@@ -1,8 +1,8 @@
 """Configuration loading and validation for HexSwitch."""
 
 import logging
-import tomllib
 from pathlib import Path
+import tomllib
 from typing import Any
 
 logger = logging.getLogger(__name__)
