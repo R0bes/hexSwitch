@@ -1,7 +1,7 @@
 [project]
 name = "hexswitch"
 version = "0.1.2"
-description = "Hexagonal runtime switchboard for config-driven microservices"
+description = "Hexagonal runtime switchboard for config-driven microservices with automatic versioning"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
