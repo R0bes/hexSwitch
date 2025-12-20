@@ -29,39 +29,54 @@ pip install hexswitch
 
 ### Basic Usage
 
+**Einfache Verwendung mit HexSwitchService (Empfohlen):**
+
+```python
+from hexswitch.service import HexSwitchService
+
+class MyService(HexSwitchService):
+    def on_ready(self):
+        print("Service is ready!")
+
+if __name__ == "__main__":
+    service = MyService()  # Lädt automatisch hex-config.toml
+    service.run()  # Läuft bis unterbrochen
+```
+
+**Environment-Variable-Overrides:**
+
+```bash
+# Setzen von Umgebungsvariablen
+export HEX_SERVICE_NAME="my-service"
+export HEX_INBOUND_HTTP_PORT="9000"
+export HEX_LOGGING_LEVEL="DEBUG"
+
+# Service starten - Variablen überschreiben automatisch Config-Werte
+python my_service.py
+```
+
+**Erweiterte Verwendung mit Runtime:**
+
 ```python
 from hexswitch.runtime import Runtime
+from hexswitch.shared.config import load_config
 
-config = {
-    "service": {"name": "my-service"},
-    "inbound": [
-        {
-            "name": "http",
-            "enabled": True,
-            "port": 8000,
-            "routes": [
-                {
-                    "path": "/hello",
-                    "method": "GET",
-                    "port": "hello_handler"
-                }
-            ]
-        }
-    ]
-}
-
+config = load_config("hex-config.toml")
 runtime = Runtime(config)
 runtime.start()
 ```
 
 ## Features
 
+- ✅ **Simple Entry Point**: `HexSwitchService` class for easy framework usage
+- ✅ **Environment Variable Overrides**: Automatic config overrides via `HEX_` prefixed environment variables
 - ✅ **Protocol-agnostic**: Business logic is completely independent of communication protocols
-- ✅ **Configuration-driven**: Adapters are wired together via YAML configuration files
+- ✅ **Configuration-driven**: Adapters are wired together via TOML configuration files
 - ✅ **Separation of concerns**: Clear boundaries between adapters, ports, and business logic
 - ✅ **Extensible**: Easy to add new adapters without changing core logic
 - ✅ **Observability**: Integrated metrics, tracing, and logging
 - ✅ **Multi-protocol**: Support for HTTP, WebSocket, gRPC, and MCP
+- ✅ **Lifecycle Management**: Automatic runtime integration with hooks for customization
 
 ## Documentation
 

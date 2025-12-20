@@ -22,7 +22,7 @@ title: HexSwitch - Ultimate Level Projektanalyse
 **Analysedatum:** 2025-12-17  
 **Analysestufe:** <span class="badge badge-info">Ultimate</span>  
 **Projekt:** HexSwitch - Hexagonal Runtime Switchboard  
-**Version:** 0.1.0 <span class="badge badge-warning">Alpha</span>
+**Version:** 0.1.2 <span class="badge badge-warning">Alpha</span>
 
 ---
 
@@ -35,7 +35,7 @@ HexSwitch ist ein **konfigurationsgetriebenes Runtime-System** für Microservice
 - **Python-Dateien:** 48 Dateien (Core-Package)
 - **Test-Dateien:** 69 Dateien
 - **Adapter-Implementierungen:** 8 (4 Inbound, 4 Outbound)
-- **Version:** 0.1.0 (Alpha)
+- **Version:** 0.1.2 (Alpha)
 - **Python-Anforderung:** >= 3.12
 - **Coverage-Threshold:** 50% (✅ verbessert von 0%)
 - **Dependencies:** 11 Core + 8 Dev

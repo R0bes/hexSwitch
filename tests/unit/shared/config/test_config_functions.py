@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 
 import pytest
-import yaml
+import tomli_w
 
 from hexswitch.shared.config.config import ConfigError, load_config, validate_config
 
@@ -18,8 +18,8 @@ class TestLoadConfig:
             "service": {"name": "test-service"},
         }
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            yaml.dump(config_data, f)
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+            f.write(tomli_w.dumps(config_data).encode("utf-8"))
             config_path = f.name
 
         try:
@@ -31,24 +31,24 @@ class TestLoadConfig:
     def test_load_config_file_not_found(self) -> None:
         """Test loading config from non-existent file."""
         with pytest.raises(ConfigError, match="not found"):
-            load_config("/nonexistent/path/config.yaml")
+            load_config("/nonexistent/path/config.toml")
 
-    def test_load_config_invalid_yaml(self) -> None:
-        """Test loading config with invalid YAML."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write("invalid: yaml: content: [")
+    def test_load_config_invalid_toml(self) -> None:
+        """Test loading config with invalid TOML."""
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+            f.write(b"invalid toml content [")
             config_path = f.name
 
         try:
-            with pytest.raises(ConfigError, match="Invalid YAML"):
+            with pytest.raises(ConfigError, match="Invalid TOML"):
                 load_config(config_path)
         finally:
             Path(config_path).unlink()
 
     def test_load_config_empty_file(self) -> None:
         """Test loading empty config file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write("")
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+            f.write(b"")
             config_path = f.name
 
         try:
@@ -59,15 +59,9 @@ class TestLoadConfig:
 
     def test_load_config_not_dict(self) -> None:
         """Test loading config that is not a dictionary."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            yaml.dump(["list", "not", "dict"], f)
-            config_path = f.name
-
-        try:
-            with pytest.raises(ConfigError, match="must be a dictionary"):
-                load_config(config_path)
-        finally:
-            Path(config_path).unlink()
+        # TOML always parses to a dict (root must be a table)
+        # This test is less relevant for TOML
+        pass
 
 
 class TestValidateConfig:

@@ -3,6 +3,11 @@
 # - example1: HTTP Service (port 8000)
 # - example2: gRPC Service (port 50051)
 # - example3: WebSocket/MCP Service (ports 8080, 3000)
+#
+# Ports are configured via HEX_ environment variables to avoid duplication:
+# - Inbound ports: HEX_INBOUND_<ADAPTER>_PORT
+# - Outbound URLs: HEX_OUTBOUND_<ADAPTER>_<URL_FIELD>
+# These override values from hex-config.toml files
 
 name: example-services
 
@@ -18,8 +23,13 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - SERVICE_NAME=example1
+      # Inbound adapter ports
+      - HEX_INBOUND_HTTP_PORT=8000
+      # Outbound adapter URLs (referencing other services)
+      - HEX_OUTBOUND_GRPC_CLIENT_SERVER_URL=example2:50051
+      - HEX_OUTBOUND_WEBSOCKET_CLIENT_URL=ws://example3:8080
     volumes:
-      - ./services/example1/hex-config.yaml:/app/hex-config.yaml:ro
+      - ./services/example1/hex-config.toml:/app/hex-config.toml:ro
     networks:
       - example-network
     restart: unless-stopped
@@ -46,8 +56,13 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - SERVICE_NAME=example2
+      # Inbound adapter ports
+      - HEX_INBOUND_GRPC_PORT=50051
+      # Outbound adapter URLs (referencing other services)
+      - HEX_OUTBOUND_HTTP_CLIENT_BASE_URL=http://example1:8000
+      - HEX_OUTBOUND_WEBSOCKET_CLIENT_URL=ws://example3:8080
     volumes:
-      - ./services/example2/hex-config.yaml:/app/hex-config.yaml:ro
+      - ./services/example2/hex-config.toml:/app/hex-config.toml:ro
     networks:
       - example-network
     restart: unless-stopped
@@ -70,8 +85,14 @@ services:
     environment:
       - LOG_LEVEL=INFO
       - SERVICE_NAME=example3
+      # Inbound adapter ports
+      - HEX_INBOUND_WEBSOCKET_PORT=8080
+      - HEX_INBOUND_MCP_PORT=3000
+      # Outbound adapter URLs (referencing other services)
+      - HEX_OUTBOUND_HTTP_CLIENT_BASE_URL=http://example1:8000
+      - HEX_OUTBOUND_GRPC_CLIENT_SERVER_URL=example2:50051
     volumes:
-      - ./services/example3/hex-config.yaml:/app/hex-config.yaml:ro
+      - ./services/example3/hex-config.toml:/app/hex-config.toml:ro
     networks:
       - example-network
     restart: unless-stopped

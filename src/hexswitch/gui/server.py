@@ -40,7 +40,7 @@ class GuiServer:
         Returns:
             FastAPI application instance.
         """
-        app = FastAPI(title="HexSwitch GUI", version="0.1.0")
+        app = FastAPI(title="HexSwitch GUI", version="0.1.2")
 
         # Store runtime in app state for access in routes
         if self.runtime:

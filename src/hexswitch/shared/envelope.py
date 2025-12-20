@@ -266,14 +266,72 @@ class Envelope:
 
     def __enter__(self) -> "Envelope":
         """Context manager entry - automatically starts span."""
-        self.start_span()
+        span_name = self.path or "envelope"
+
+        # Get parent span if trace context exists
+        parent_span = None
+        if self.trace_id:
+            # Try to get current span from context
+            current_span = get_current_span()
+            if current_span and current_span.trace_id == self.trace_id:
+                parent_span = current_span
+            elif self.parent_span_id:
+                # Create a parent span reference (simplified)
+                # In a real implementation, you'd look up the parent span
+                pass
+
+        # Create tags from envelope data
+        span_tags: dict[str, str] = {}
+        if self.path:
+            span_tags["envelope.path"] = self.path
+        if self.method:
+            span_tags["envelope.method"] = self.method
+        if self.status_code:
+            span_tags["envelope.status_code"] = str(self.status_code)
+
+        # Start span directly (without using deprecated method)
+        span = start_span(span_name, parent=parent_span, tags=span_tags)
+
+        # Update envelope trace context from span
+        self.trace_id = span.trace_id
+        self.span_id = span.span_id
+        if parent_span:
+            self.parent_span_id = parent_span.span_id
+
+        # Store span reference
+        self._span = span
+
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Context manager exit - automatically finishes span."""
+        if not self._span:
+            return
+
+        # Add final tags
         if exc_type:
-            if self._span:
-                self._span.add_tag("error", "true")
-                self._span.add_log(f"Exception: {exc_type.__name__}", fields={"exception": str(exc_val)})
-        self.finish_span()
+            self._span.add_tag("error", "true")
+            self._span.add_log(f"Exception: {exc_type.__name__}", fields={"exception": str(exc_val)})
+        elif self.error_message:
+            self._span.add_tag("error", "true")
+            self._span.add_tag("error.message", self.error_message)
+        else:
+            self._span.add_tag("success", "true")
+
+        # Add log entry
+        log_fields: dict[str, Any] = {
+            "status_code": self.status_code,
+        }
+        if self.data:
+            log_fields["has_data"] = True
+        if self.error_message:
+            log_fields["error"] = self.error_message
+
+        self._span.add_log(
+            f"Envelope completed: {self.path}",
+            fields=log_fields,
+        )
+
+        # Finish span directly (without using deprecated method)
+        self._span.finish()
 
