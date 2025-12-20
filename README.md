@@ -4,6 +4,8 @@
 
 # HexSwitch
 
+> **Note:** This project uses automatic versioning. Every push to `main` automatically bumps the version and publishes to PyPI.
+
 <!-- Test PR for CD workflow with branch protection -->
 
 Hexagonal runtime switchboard for config-driven microservices.
