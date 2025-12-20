@@ -5,6 +5,8 @@ from pathlib import Path
 import tempfile
 from unittest.mock import MagicMock, patch
 
+import tomli_w
+
 from hexswitch.app import cmd_init, cmd_run, cmd_validate, cmd_version, main
 from hexswitch.shared.config.config import ConfigError
 
@@ -14,16 +16,12 @@ class TestCmdValidate:
 
     def test_validate_valid_config(self) -> None:
         """Test validating a valid config file."""
-        config_content = """
-service:
-  name: test-service
-inbound:
-  http:
-    enabled: true
-    port: 8000
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(config_content)
+        config_content = {
+            "service": {"name": "test-service"},
+            "inbound": {"http": {"enabled": True, "port": 8000}},
+        }
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+            f.write(tomli_w.dumps(config_content).encode("utf-8"))
             config_path = f.name
 
         try:
@@ -35,16 +33,12 @@ inbound:
 
     def test_validate_invalid_config(self) -> None:
         """Test validating an invalid config file."""
-        config_content = """
-service:
-  name: test-service
-inbound:
-  http:
-    enabled: true
-    port: 70000  # Invalid port
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(config_content)
+        config_content = {
+            "service": {"name": "test-service"},
+            "inbound": {"http": {"enabled": True, "port": 70000}},  # Invalid port
+        }
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+            f.write(tomli_w.dumps(config_content).encode("utf-8"))
             config_path = f.name
 
         try:
@@ -56,14 +50,14 @@ inbound:
 
     def test_validate_missing_file(self) -> None:
         """Test validating a non-existent config file."""
-        args = argparse.Namespace(config="/nonexistent/path/config.yaml")
+        args = argparse.Namespace(config="/nonexistent/path/config.toml")
         result = cmd_validate(args)
         assert result == 1
 
-    def test_validate_invalid_yaml(self) -> None:
-        """Test validating a file with invalid YAML."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write("invalid: yaml: content: [")
+    def test_validate_invalid_toml(self) -> None:
+        """Test validating a file with invalid TOML."""
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+            f.write(b"invalid toml content [")
             config_path = f.name
 
         try:
@@ -175,9 +169,9 @@ class TestCmdInit:
     @patch("hexswitch.app.get_example_config")
     def test_init_create_config(self, mock_example: MagicMock) -> None:
         """Test init command creates config file."""
-        mock_example.return_value = "service:\n  name: test"
+        mock_example.return_value = '[service]\nname = "test"'
         with tempfile.TemporaryDirectory() as tmpdir:
-            config_path = Path(tmpdir) / "test-config.yaml"
+            config_path = Path(tmpdir) / "test-config.toml"
             args = argparse.Namespace(config=str(config_path), force=False)
             result = cmd_init(args)
             assert result == 0
@@ -187,7 +181,7 @@ class TestCmdInit:
     @patch("hexswitch.app.get_example_config")
     def test_init_existing_file_no_force(self, mock_example: MagicMock) -> None:
         """Test init command fails when file exists and force is False."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
             config_path = Path(f.name)
 
         try:
@@ -201,8 +195,8 @@ class TestCmdInit:
     @patch("hexswitch.app.get_example_config")
     def test_init_existing_file_with_force(self, mock_example: MagicMock) -> None:
         """Test init command overwrites existing file with force."""
-        mock_example.return_value = "service:\n  name: test"
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        mock_example.return_value = '[service]\nname = "test"'
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
             config_path = Path(f.name)
 
         try:
@@ -240,7 +234,7 @@ class TestMain:
     ) -> None:
         """Test main function with validate command."""
         mock_parse.return_value = argparse.Namespace(
-            command="validate", log_level="INFO", config="test.yaml"
+            command="validate", log_level="INFO", config="test.toml"
         )
         mock_cmd.return_value = 0
         result = main()
