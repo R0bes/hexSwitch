@@ -2,13 +2,12 @@
 
 import logging
 from pathlib import Path
+import tomllib
 from typing import Any
-
-import yaml
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CONFIG_PATH = "hex-config.yaml"
+DEFAULT_CONFIG_PATH = "hex-config.toml"
 
 
 class ConfigError(Exception):
@@ -18,10 +17,10 @@ class ConfigError(Exception):
 
 
 def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
-    """Load configuration from YAML file.
+    """Load configuration from TOML file.
 
     Args:
-        config_path: Path to configuration file. Defaults to hex-config.yaml.
+        config_path: Path to configuration file. Defaults to hex-config.toml.
 
     Returns:
         Configuration dictionary.
@@ -38,24 +37,21 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
     if not config_path.exists():
         raise ConfigError(f"Configuration file not found: {config_path}")
 
-    # Load file content
+    # Load TOML
     try:
-        with config_path.open("r", encoding="utf-8") as f:
-            content = f.read()
+        with config_path.open("rb") as f:
+            config = tomllib.load(f)
+    except tomllib.TOMLDecodeError as e:
+        raise ConfigError(f"Invalid TOML syntax in {config_path}: {e}") from e
     except Exception as e:
         raise ConfigError(f"Error reading configuration file {config_path}: {e}") from e
 
-    # Load YAML
-    try:
-        config = yaml.safe_load(content)
-    except yaml.YAMLError as e:
-        raise ConfigError(f"Invalid YAML syntax in {config_path}: {e}") from e
-
-    if config is None:
-        raise ConfigError(f"Configuration file is empty: {config_path}")
-
     if not isinstance(config, dict):
         raise ConfigError(f"Configuration must be a dictionary, got {type(config).__name__}")
+
+    # Check if config is empty (empty TOML file parses to empty dict)
+    if not config:
+        raise ConfigError(f"Configuration file is empty: {config_path}")
 
     return config
 
@@ -1033,33 +1029,32 @@ def get_example_config() -> str:
     """Generate example configuration file content.
 
     Returns:
-        Example configuration as YAML string.
+        Example configuration as TOML string.
     """
-    return """service:
-  name: example-service
-  runtime: python
+    return """[service]
+name = "example-service"
+runtime = "python"
 
-inbound:
-  http:
-    enabled: true
-    port: 8000
-    base_path: /api
-    routes:
-      - path: /hello
-        method: GET
-        handler: adapters.http_handlers:hello
+[inbound.http]
+enabled = true
+port = 8000
+base_path = "/api"
 
-outbound:
-  http_client:
-    enabled: false
-    base_url: https://api.example.com
-    timeout: 30
+[[inbound.http.routes]]
+path = "/hello"
+method = "GET"
+handler = "adapters.http_handlers:hello"
 
-  mcp_client:
-    enabled: false
-    server_url: https://mcp.example.com
-    timeout: 30
+[outbound.http_client]
+enabled = false
+base_url = "https://api.example.com"
+timeout = 30
 
-logging:
-  level: INFO
+[outbound.mcp_client]
+enabled = false
+server_url = "https://mcp.example.com"
+timeout = 30
+
+[logging]
+level = "INFO"
 """

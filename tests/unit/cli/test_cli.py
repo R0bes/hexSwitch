@@ -6,7 +6,7 @@ import sys
 import tempfile
 
 import pytest
-import yaml
+import tomli_w
 
 # Add src to path for testing
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
@@ -26,7 +26,7 @@ def test_cli_version_flag() -> None:
     )
     assert result.returncode == 0
     assert "HexSwitch" in result.stdout
-    assert "0.1.0" in result.stdout
+    assert "0.1.2" in result.stdout
 
 
 def test_cli_version_command() -> None:
@@ -40,7 +40,7 @@ def test_cli_version_command() -> None:
     )
     assert result.returncode == 0
     assert "HexSwitch" in result.stdout
-    assert "0.1.0" in result.stdout
+    assert "0.1.2" in result.stdout
     assert "Hexagonal runtime switchboard" in result.stdout
 
 
@@ -74,7 +74,7 @@ def test_cli_help_flag() -> None:
 def test_cli_init_creates_config() -> None:
     """Test that 'init' command creates example configuration."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = Path(tmpdir) / "hex-config.yaml"
+        config_path = Path(tmpdir) / "hex-config.toml"
         result = subprocess.run(
             [sys.executable, "-m", "hexswitch.app", "--config", str(config_path), "init"],
             capture_output=True,
@@ -90,7 +90,7 @@ def test_cli_init_creates_config() -> None:
 def test_cli_init_refuses_overwrite() -> None:
     """Test that 'init' command refuses to overwrite existing config without --force."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = Path(tmpdir) / "hex-config.yaml"
+        config_path = Path(tmpdir) / "hex-config.toml"
         config_path.write_text("existing: config")
 
         result = subprocess.run(
@@ -107,7 +107,7 @@ def test_cli_init_refuses_overwrite() -> None:
 def test_cli_init_force_overwrite() -> None:
     """Test that 'init' command overwrites with --force."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = Path(tmpdir) / "hex-config.yaml"
+        config_path = Path(tmpdir) / "hex-config.toml"
         config_path.write_text("existing: config")
 
         result = subprocess.run(
@@ -137,9 +137,9 @@ def test_cli_validate_success() -> None:
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = Path(tmpdir) / "hex-config.yaml"
-        with config_path.open("w") as f:
-            yaml.dump(config_data, f)
+        config_path = Path(tmpdir) / "hex-config.toml"
+        with config_path.open("wb") as f:
+            f.write(tomli_w.dumps(config_data).encode("utf-8"))
 
         result = subprocess.run(
             [sys.executable, "-m", "hexswitch.app", "--config", str(config_path), "validate"],
@@ -155,8 +155,8 @@ def test_cli_validate_success() -> None:
 def test_cli_validate_failure() -> None:
     """Test that 'validate' command fails with invalid config."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = Path(tmpdir) / "hex-config.yaml"
-        config_path.write_text("invalid: yaml: [")
+        config_path = Path(tmpdir) / "hex-config.toml"
+        config_path.write_bytes(b"invalid toml content [")
 
         result = subprocess.run(
             [sys.executable, "-m", "hexswitch.app", "--config", str(config_path), "validate"],
@@ -177,9 +177,9 @@ def test_cli_run_dry_run() -> None:
     }
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = Path(tmpdir) / "hex-config.yaml"
-        with config_path.open("w") as f:
-            yaml.dump(config_data, f)
+        config_path = Path(tmpdir) / "hex-config.toml"
+        with config_path.open("wb") as f:
+            f.write(tomli_w.dumps(config_data).encode("utf-8"))
 
         result = subprocess.run(
             [
@@ -217,8 +217,8 @@ def test_cli_run_starts_runtime() -> None:
     config_path = Path(tmpdir) / "hex-config.yaml"
 
     try:
-        with config_path.open("w") as f:
-            yaml.dump(config_data, f)
+        with config_path.open("wb") as f:
+            f.write(tomli_w.dumps(config_data).encode("utf-8"))
 
         # Start process with explicit timeout
         process = subprocess.Popen(

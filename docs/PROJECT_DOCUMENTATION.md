@@ -19,7 +19,7 @@ title: HexSwitch - Vollständige Projektdokumentation
 
 # HexSwitch - Vollständige Projektdokumentation
 
-**Version:** 0.1.0  
+**Version:** 0.1.2  
 **Letzte Aktualisierung:** 2025-12-13  
 **Status:** <span class="badge badge-warning">Alpha</span>
 
@@ -591,7 +591,7 @@ def hello_handler(envelope: Envelope) -> Envelope:
 ---
 
 **Letzte Aktualisierung:** 2025-12-13  
-**Version:** 0.1.0  
+**Version:** 0.1.2  
 **Status:** <span class="badge badge-warning">Alpha</span>
 
 </div>

@@ -2,9 +2,10 @@
 
 from pathlib import Path
 import tempfile
+import tomllib
 
 import pytest
-import yaml
+import tomli_w
 
 from hexswitch.shared.config import (
     DEFAULT_CONFIG_PATH,
@@ -18,18 +19,18 @@ from hexswitch.shared.config import (
 def test_load_config_file_not_found() -> None:
     """Test that loading non-existent config file raises ConfigError."""
     with pytest.raises(ConfigError, match="Configuration file not found"):
-        load_config("nonexistent-config.yaml")
+        load_config("nonexistent-config.toml")
 
 
-def test_load_config_invalid_yaml() -> None:
-    """Test that loading invalid YAML raises ConfigError."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        f.write("invalid: yaml: content: [")
+def test_load_config_invalid_toml() -> None:
+    """Test that loading invalid TOML raises ConfigError."""
+    with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+        f.write(b"invalid toml content [")
         f.flush()
         temp_path = Path(f.name)
 
     try:
-        with pytest.raises(ConfigError, match="Invalid YAML syntax"):
+        with pytest.raises(ConfigError, match="Invalid TOML"):
             load_config(temp_path)
     finally:
         temp_path.unlink()
@@ -37,8 +38,8 @@ def test_load_config_invalid_yaml() -> None:
 
 def test_load_config_empty_file() -> None:
     """Test that loading empty config file raises ConfigError."""
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        f.write("")
+    with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+        f.write(b"")
         f.flush()
         temp_path = Path(f.name)
 
@@ -56,8 +57,8 @@ def test_load_config_valid() -> None:
         "inbound": {"http": {"enabled": True}},
     }
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-        yaml.dump(config_data, f)
+    with tempfile.NamedTemporaryFile(mode="wb", suffix=".toml", delete=False) as f:
+        f.write(tomli_w.dumps(config_data).encode("utf-8"))
         f.flush()
         temp_path = Path(f.name)
 
@@ -124,12 +125,13 @@ def test_validate_config_minimal() -> None:
 
 
 def test_get_example_config() -> None:
-    """Test that example config is valid YAML and structure."""
+    """Test that example config is valid TOML and structure."""
     example = get_example_config()
     assert isinstance(example, str)
 
-    # Parse as YAML to verify it's valid
-    config = yaml.safe_load(example)
+    # Parse as TOML to verify it's valid
+    import io
+    config = tomllib.load(io.BytesIO(example.encode("utf-8")))
     assert isinstance(config, dict)
     assert "service" in config
     assert config["service"]["name"] == "example-service"
@@ -137,5 +139,5 @@ def test_get_example_config() -> None:
 
 def test_default_config_path() -> None:
     """Test that DEFAULT_CONFIG_PATH is set correctly."""
-    assert DEFAULT_CONFIG_PATH == "hex-config.yaml"
+    assert DEFAULT_CONFIG_PATH == "hex-config.toml"
 

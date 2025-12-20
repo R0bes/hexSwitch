@@ -30,7 +30,7 @@ It acts as the stable entry point for:
 -   Future runtime execution
 -   Developer ergonomics & automation
 
-This shell **must remain backwards-compatible** across versions unless
+This shell follows semantic versioning
 explicitly marked as breaking.
 
 ------------------------------------------------------------------------
@@ -63,75 +63,73 @@ explicitly marked as breaking.
   Option          Description
   --------------- --------------------------------
   `--log-level`   DEBUG / INFO / WARNING / ERROR
-  `--config`      Path to hex-config.yaml
+  `--config`      Path to hex-config.toml
 
 ------------------------------------------------------------------------
 
 ## Configuration File
 
-**Default:** `hex-config.yaml`
+**Default:** `hex-config.toml`
 
-HexSwitch supports both plain YAML files and Jinja2 templates (`.j2` extension). Templates allow dynamic configuration using environment variables.
+HexSwitch supports both plain TOML files and Jinja2 templates (`.j2` extension). Templates allow dynamic configuration using environment variables.
 
-**Plain YAML example:**
-``` yaml
-service:
-  name: example-service
-  runtime: python
+**Plain TOML example:**
+```toml
+[service]
+name = "example-service"
+runtime = "python"
 
-inbound:
-  http:
-    enabled: true
-    base_path: /api
-    routes:
-      - path: /hello
-        method: GET
-        handler: adapters.http_handlers:hello
+[inbound.http]
+enabled = true
+base_path = "/api"
 
-outbound:
-  http_client:
-    enabled: false
-    base_url: https://api.example.com
-    timeout: 30
+[[inbound.http.routes]]
+path = "/hello"
+method = "GET"
+handler = "adapters.http_handlers:hello"
 
-  mcp_client:
-    enabled: false
-    server_url: https://mcp.example.com
-    timeout: 30
+[outbound.http_client]
+enabled = false
+base_url = "https://api.example.com"
+timeout = 30
 
-logging:
-  level: INFO
+[outbound.mcp_client]
+enabled = false
+server_url = "https://mcp.example.com"
+timeout = 30
+
+[logging]
+level = "INFO"
 ```
 
-**Template example (`hex-config.yaml.j2`):**
-``` yaml
-service:
-  name: {{ env.SERVICE_NAME | default("example-service") }}
-  runtime: python
+**Template example (`hex-config.toml.j2`):**
+```toml
+[service]
+name = "{{ env.SERVICE_NAME | default('example-service') }}"
+runtime = "python"
 
-inbound:
-  http:
-    enabled: {{ env.ENABLE_HTTP | default(true) }}
-    port: {{ env.HTTP_PORT | default(8000) | int }}
-    base_path: {{ env.BASE_PATH | default("/api") }}
-    routes:
-      - path: /hello
-        method: GET
-        handler: adapters.http_handlers:hello
+[inbound.http]
+enabled = {{ env.ENABLE_HTTP | default(true) }}
+port = {{ env.HTTP_PORT | default(8000) | int }}
+base_path = "{{ env.BASE_PATH | default('/api') }}"
 
-outbound:
-  http_client:
-    enabled: {{ env.ENABLE_HTTP_CLIENT | default(false) }}
-    base_url: {{ env.HTTP_CLIENT_BASE_URL | default("https://api.example.com") }}
-    timeout: {{ env.HTTP_CLIENT_TIMEOUT | default(30) | int }}
+[[inbound.http.routes]]
+path = "/hello"
+method = "GET"
+handler = "adapters.http_handlers:hello"
 
-  mcp_client:
-    enabled: {{ env.ENABLE_MCP_CLIENT | default(false) }}
-    server_url: {{ env.MCP_SERVER_URL | default("https://mcp.example.com") }}
-    timeout: {{ env.MCP_CLIENT_TIMEOUT | default(30) | int }}
+[outbound.http_client]
+enabled = {{ env.ENABLE_HTTP_CLIENT | default(false) }}
+base_url = "{{ env.HTTP_CLIENT_BASE_URL | default('https://api.example.com') }}"
+timeout = {{ env.HTTP_CLIENT_TIMEOUT | default(30) | int }}
 
-logging:
-  level: {{ env.LOG_LEVEL | default("INFO") }}
+[outbound.mcp_client]
+enabled = {{ env.ENABLE_MCP_CLIENT | default(false) }}
+server_url = "{{ env.MCP_SERVER_URL | default('https://mcp.example.com') }}"
+timeout = {{ env.MCP_CLIENT_TIMEOUT | default(30) | int }}
+
+[logging]
+level = "{{ env.LOG_LEVEL | default('INFO') }}"
 ```
 
 **Template features:**
@@ -170,7 +168,7 @@ Options:
 
 ### `hexswitch validate`
 
-Validation layers: 1. File exists 2. YAML syntax valid 3. Required
+Validation layers: 1. File exists 2. TOML syntax valid 3. Required
 sections present 4. Adapter flags are booleans
 
 ### `hexswitch run`

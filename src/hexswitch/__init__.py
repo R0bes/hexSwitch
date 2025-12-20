@@ -1,7 +1,8 @@
 # HexSwitch - Hexagonal runtime switchboard for config-driven microservices
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
+from hexswitch.service import HexSwitchService, HexSwitchServiceConfig
 from hexswitch.shared.envelope import Envelope
 from hexswitch.shared.logging import (
     LogFormat,
@@ -11,6 +12,8 @@ from hexswitch.shared.logging import (
 )
 
 __all__ = [
+    "HexSwitchService",
+    "HexSwitchServiceConfig",
     "Envelope",
     "LogFormat",
     "LoggingConfig",

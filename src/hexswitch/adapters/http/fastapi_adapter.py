@@ -39,7 +39,7 @@ class FastApiHttpAdapterServer(InboundAdapter):
         self.enable_default_routes = config.get("enable_default_routes", True)
 
         # Create FastAPI app
-        self.app = FastAPI(title="HexSwitch", version="0.1.0")
+        self.app = FastAPI(title="HexSwitch", version="0.1.2")
         self._setup_default_routes()
         self._setup_routes()
 
