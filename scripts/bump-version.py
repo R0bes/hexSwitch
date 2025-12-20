@@ -2,6 +2,7 @@
 """Automatically bump version in pyproject.toml."""
 
 from pathlib import Path
+import os
 import re
 import sys
 
@@ -98,9 +99,11 @@ def main() -> int:
 
         update_version(pyproject_path, new_version)
         print(f"Version bumped from {current_version} to {new_version}")
-        # Output for GitHub Actions
-        print(f"::set-output name=version::{new_version}")
-        print(f"::set-output name=old_version::{current_version}")
+        # Output for GitHub Actions (new format)
+        if "GITHUB_OUTPUT" in os.environ:
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write(f"version={new_version}\n")
+                f.write(f"old_version={current_version}\n")
         # Also print to stdout for easy parsing
         print(f"NEW_VERSION={new_version}")
         return 0
