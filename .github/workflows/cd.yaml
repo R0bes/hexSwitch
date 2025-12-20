@@ -20,7 +20,6 @@ jobs:
         with:
           token: ${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,21 +33,36 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Current version: $VERSION"
 
+      - name: Check if tag exists
+        id: check-tag
+        run: |
+          TAG="v${{ steps.version.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag $TAG already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag $TAG does not exist yet"
+          fi
+
       - name: Create git tag if not exists
+        if: steps.check-tag.outputs.exists == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ steps.version.outputs.version }}"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists, skipping"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          # Use AUTOMATED_WORKFLOW_TOKEN if available (bypasses branch protection)
+          # Otherwise fall back to GITHUB_TOKEN (may fail on protected branches)
+          if [ -n "${{ secrets.AUTOMATED_WORKFLOW_TOKEN }}" ]; then
+            git remote set-url origin https://x-access-token:${{ secrets.AUTOMATED_WORKFLOW_TOKEN }}@github.com/${{ github.repository }}.git
           else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git tag -a "$TAG" -m "Release $TAG"
-            git remote set-url origin https://x-access-token:${{ secrets.AUTOMATED_WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-            git push origin "$TAG"
-            echo "Created and pushed tag $TAG"
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
           fi
+          git push origin "$TAG" || echo "Warning: Failed to push tag (may require manual tag creation)"
+          echo "Created and pushed tag $TAG"
 
   publish-pypi:
     name: Publish to PyPI
