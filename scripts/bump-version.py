@@ -2,6 +2,7 @@
 """Automatically bump version in pyproject.toml."""
 
 from pathlib import Path
+import os
 import re
 import sys
 
